@@ -260,11 +260,11 @@ function renderLoginView() {
       mouse.vy = 0;
     });
     
-    // Slow drifting vortices to simulate fluid currents
+    // Drifting vortices to simulate fluid currents (speeds and strengths increased for dynamic flow)
     const vortices = [
-      { x: 0, y: 0, strength: 1.0, angle: 0, speed: 0.003, rx: 250, ry: 150 },
-      { x: 0, y: 0, strength: -1.2, angle: Math.PI / 2, speed: 0.002, rx: 300, ry: 200 },
-      { x: 0, y: 0, strength: 0.8, angle: Math.PI, speed: 0.001, rx: 350, ry: 250 }
+      { x: 0, y: 0, strength: 2.4, angle: 0, speed: 0.012, rx: 250, ry: 150 },
+      { x: 0, y: 0, strength: -2.8, angle: Math.PI / 2, speed: 0.009, rx: 300, ry: 200 },
+      { x: 0, y: 0, strength: 2.0, angle: Math.PI, speed: 0.006, rx: 350, ry: 250 }
     ];
     
     class FluidParticle {
@@ -277,8 +277,8 @@ function renderLoginView() {
       reset() {
         this.x = Math.random() * width;
         this.y = Math.random() * height;
-        this.vx = (Math.random() - 0.5) * 0.3;
-        this.vy = (Math.random() - 0.5) * 0.3;
+        this.vx = (Math.random() - 0.5) * 0.8;
+        this.vy = (Math.random() - 0.5) * 0.8;
         this.radius = Math.random() * 1.5 + 0.8;
         this.history = [];
         this.maxHistory = Math.floor(Math.random() * 8) + 8; // 8 to 15 frames trail
@@ -291,7 +291,7 @@ function renderLoginView() {
         ];
         this.colorBase = colors[Math.floor(Math.random() * colors.length)];
         this.alpha = Math.random() * 0.3 + 0.2; // Opacity between 0.2 and 0.5
-        this.speedLimit = Math.random() * 2 + 1.2;
+        this.speedLimit = Math.random() * 2.5 + 2.0; // Higher speed cap (2.0 to 4.5)
       }
       
       update() {
@@ -312,9 +312,9 @@ function renderLoginView() {
           this.vy += (-dx / dist) * force;
         });
         
-        // 2. Slow drag friction (deceleration)
-        this.vx *= 0.97;
-        this.vy *= 0.97;
+        // 2. Slow drag friction (less drag for longer momentum)
+        this.vx *= 0.978;
+        this.vy *= 0.978;
         
         // 3. Mouse influence
         if (mouse.x !== null && mouse.y !== null) {
