@@ -1,6 +1,6 @@
 // Google Sheets DB Sync Adapter (Local-first & Background Sync)
 
-const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyspIGIBNc-erhvFKSgfRcjFduPT576G2SqR8T-jWYCjdPMfnI0Je00Ax53UOOb5h3Mog/exec";
+const GAS_API_URL = "/api/sync";
 
 // LocalStorage Namespaces
 const STORAGE_KEYS = {
@@ -45,7 +45,7 @@ async function callApi(action, payload = {}) {
     const response = await fetch(GAS_API_URL, {
       method: "POST",
       headers: {
-        "Content-Type": "text/plain;charset=utf-8" // Redirect/CORS issues with JSON on GAS
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({ action, payload })
     });

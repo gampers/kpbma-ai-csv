@@ -31,6 +31,18 @@
 }
 
 /* Base resets & typography */
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -60,6 +72,7 @@ button, input, select, textarea {
 
 /* Common Layout Components */
 .kpbma-topbar {
+  flex-shrink: 0;
   background-color: var(--color-primary-dark);
   color: #FFFFFF;
   padding: 14px 24px;
@@ -200,7 +213,8 @@ button, input, select, textarea {
 /* Layout shell styles */
 .shell {
   display: flex;
-  min-height: calc(100vh - 64px);
+  flex: 1;
+  overflow: hidden;
 }
 
 .sidenav {
@@ -265,6 +279,7 @@ button, input, select, textarea {
   padding: 32px 40px;
   background-color: var(--color-bg-muted);
   overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 
 /* Document Cards */
@@ -715,7 +730,16 @@ table.list tbody tr:hover {
 
 /* Print settings */
 @media print {
-  body { background: #FFFFFF !important; }
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #FFFFFF !important;
+  }
+  #root, .shell, .main-panel {
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+  }
   .kpbma-topbar, .sidenav, .toast-wrap, .no-print, .form-actions, .kpbma-footer {
     display: none !important;
   }

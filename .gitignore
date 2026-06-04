@@ -20,3 +20,6 @@ Thumbs.db
 # Agent workspaces
 .agents/
 .claude/
+
+# Reference and historical backups (Not needed for active production build)
+reference_and_backups/
