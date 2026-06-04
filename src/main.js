@@ -105,6 +105,16 @@ async function initApp() {
 function handleRouting() {
   const hash = window.location.hash || "#/launcher";
   
+  // Cleanup login canvas components if we navigate away
+  if (window.loginCanvasObserver) {
+    window.loginCanvasObserver.disconnect();
+    window.loginCanvasObserver = null;
+  }
+  if (window.loginCanvasAnimId) {
+    cancelAnimationFrame(window.loginCanvasAnimId);
+    window.loginCanvasAnimId = null;
+  }
+  
   // 1. SSO Check: If not logged in, redirect to login
   if (!authHelper.isLoggedIn()) {
     if (hash !== "#/login") {
@@ -203,7 +213,7 @@ function renderLoginView() {
     </div>
   `;
   
-  // Interactive Particle Constellation Background Effect
+  // Interactive Fluid Particles Background Effect
   const canvas = document.getElementById("login-bg-canvas");
   const wrap = document.querySelector(".login-wrap");
   if (canvas && wrap) {
@@ -220,100 +230,187 @@ function renderLoginView() {
     });
     resizeObserver.observe(wrap);
     
+    // Fluid Particles setup
     const particles = [];
-    const particleCount = Math.min(80, Math.floor((width * height) / 15000));
-    let mouse = { x: null, y: null, radius: 160 };
+    const particleCount = 120; // Perfect balance for fluid aesthetics and performance
+    
+    // Mouse state with velocity tracking
+    let mouse = { x: null, y: null, lastX: null, lastY: null, vx: 0, vy: 0, radius: 180 };
     
     wrap.addEventListener("mousemove", e => {
       const rect = wrap.getBoundingClientRect();
       mouse.x = e.clientX - rect.left;
       mouse.y = e.clientY - rect.top;
+      
+      if (mouse.lastX !== null && mouse.lastY !== null) {
+        // Calculate instantaneous velocity with dampening factor
+        mouse.vx = (mouse.x - mouse.lastX) * 0.45;
+        mouse.vy = (mouse.y - mouse.lastY) * 0.45;
+      }
+      mouse.lastX = mouse.x;
+      mouse.lastY = mouse.y;
     });
     
     wrap.addEventListener("mouseleave", () => {
       mouse.x = null;
       mouse.y = null;
+      mouse.lastX = null;
+      mouse.lastY = null;
+      mouse.vx = 0;
+      mouse.vy = 0;
     });
     
-    class Particle {
+    // Slow drifting vortices to simulate fluid currents
+    const vortices = [
+      { x: 0, y: 0, strength: 1.0, angle: 0, speed: 0.003, rx: 250, ry: 150 },
+      { x: 0, y: 0, strength: -1.2, angle: Math.PI / 2, speed: 0.002, rx: 300, ry: 200 },
+      { x: 0, y: 0, strength: 0.8, angle: Math.PI, speed: 0.001, rx: 350, ry: 250 }
+    ];
+    
+    class FluidParticle {
       constructor() {
+        this.reset();
         this.x = Math.random() * width;
         this.y = Math.random() * height;
-        this.vx = (Math.random() - 0.5) * 0.5;
-        this.vy = (Math.random() - 0.5) * 0.5;
-        this.radius = Math.random() * 2 + 1;
       }
+      
+      reset() {
+        this.x = Math.random() * width;
+        this.y = Math.random() * height;
+        this.vx = (Math.random() - 0.5) * 0.3;
+        this.vy = (Math.random() - 0.5) * 0.3;
+        this.radius = Math.random() * 1.5 + 0.8;
+        this.history = [];
+        this.maxHistory = Math.floor(Math.random() * 8) + 8; // 8 to 15 frames trail
+        
+        // Pharma/KPBMA gradient colors
+        const colors = [
+          "rgba(0, 166, 178, ",  // Neon Cyan
+          "rgba(0, 114, 206, ",  // Primary Blue
+          "rgba(179, 215, 255, " // Soft Blue
+        ];
+        this.colorBase = colors[Math.floor(Math.random() * colors.length)];
+        this.alpha = Math.random() * 0.3 + 0.2; // Opacity between 0.2 and 0.5
+        this.speedLimit = Math.random() * 2 + 1.2;
+      }
+      
       update() {
+        this.history.push({ x: this.x, y: this.y });
+        if (this.history.length > this.maxHistory) {
+          this.history.shift();
+        }
+        
+        // 1. Apply slowly moving vortex fields
+        vortices.forEach(v => {
+          const dx = v.x - this.x;
+          const dy = v.y - this.y;
+          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+          const force = v.strength / (dist + 120);
+          
+          // Cross product swirl force
+          this.vx += (dy / dist) * force;
+          this.vy += (-dx / dist) * force;
+        });
+        
+        // 2. Slow drag friction (deceleration)
+        this.vx *= 0.97;
+        this.vy *= 0.97;
+        
+        // 3. Mouse influence
+        if (mouse.x !== null && mouse.y !== null) {
+          const dx = this.x - mouse.x;
+          const dy = this.y - mouse.y;
+          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+          
+          if (dist < mouse.radius) {
+            const force = (mouse.radius - dist) / mouse.radius;
+            
+            // Drag along with mouse velocity
+            this.vx += mouse.vx * force * 0.25;
+            this.vy += mouse.vy * force * 0.25;
+            
+            // Swirl around cursor (clockwise)
+            this.vx += (-dy / dist) * force * 1.8;
+            this.vy += (dx / dist) * force * 1.8;
+            
+            // Push away from cursor slightly
+            this.vx += (dx / dist) * force * 0.4;
+            this.vy += (dy / dist) * force * 0.4;
+          }
+        }
+        
+        // Cap speed
+        const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy) || 1;
+        if (speed > this.speedLimit) {
+          this.vx = (this.vx / speed) * this.speedLimit;
+          this.vy = (this.vy / speed) * this.speedLimit;
+        }
+        
+        // Move
         this.x += this.vx;
         this.y += this.vy;
         
-        if (this.x < 0 || this.x > width) this.vx = -this.vx;
-        if (this.y < 0 || this.y > height) this.vy = -this.vy;
-        
-        // Gentle pull towards mouse
-        if (mouse.x !== null && mouse.y !== null) {
-          const dx = mouse.x - this.x;
-          const dy = mouse.y - this.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < mouse.radius) {
-            const force = (mouse.radius - dist) / mouse.radius;
-            this.x += (dx / dist) * force * 0.4;
-            this.y += (dy / dist) * force * 0.4;
-          }
+        // Respawn if off screen
+        if (this.x < -30 || this.x > width + 30 || this.y < -30 || this.y > height + 30) {
+          this.reset();
         }
       }
+      
       draw() {
+        if (this.history.length < 2) return;
+        
+        // Draw fluid path trail
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
+        ctx.moveTo(this.history[0].x, this.history[0].y);
+        for (let i = 1; i < this.history.length; i++) {
+          ctx.lineTo(this.history[i].x, this.history[i].y);
+        }
+        ctx.strokeStyle = this.colorBase + this.alpha + ")";
+        ctx.lineWidth = this.radius;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.stroke();
+        
+        // Draw bright head
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius * 1.4, 0, Math.PI * 2);
+        ctx.fillStyle = this.colorBase + (this.alpha * 1.5) + ")";
         ctx.fill();
       }
     }
     
+    // Create particles
     for (let i = 0; i < particleCount; i++) {
-      particles.push(new Particle());
+      particles.push(new FluidParticle());
     }
     
     let animFrameId;
     function animate() {
       ctx.clearRect(0, 0, width, height);
       
+      // Update vortex positions
+      vortices.forEach((v, index) => {
+        v.angle += v.speed;
+        const centerX = width / 2;
+        const centerY = height / 2;
+        v.x = centerX + Math.cos(v.angle * (index + 1)) * v.rx;
+        v.y = centerY + Math.sin(v.angle * (index + 2)) * v.ry;
+      });
+      
+      // Decay mouse velocity if mouse is not moving
+      if (mouse.x !== null && mouse.y !== null) {
+        mouse.vx *= 0.9;
+        mouse.vy *= 0.9;
+      }
+      
+      // Update and draw particles
       for (let i = 0; i < particles.length; i++) {
         particles[i].update();
         particles[i].draw();
-        
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x;
-          const dy = particles[i].y - particles[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          
-          if (dist < 110) {
-            const alpha = ((110 - dist) / 110) * 0.22;
-            ctx.beginPath();
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(0, 166, 178, ${alpha})`; // Neon cyan connection line
-            ctx.lineWidth = 0.8;
-            ctx.stroke();
-          }
-        }
-        
-        if (mouse.x !== null && mouse.y !== null) {
-          const dx = particles[i].x - mouse.x;
-          const dy = particles[i].y - mouse.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < mouse.radius) {
-            const alpha = ((mouse.radius - dist) / mouse.radius) * 0.3;
-            ctx.beginPath();
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(mouse.x, mouse.y);
-            ctx.strokeStyle = `rgba(0, 114, 206, ${alpha})`; // Neon blue cursor connection line
-            ctx.lineWidth = 0.9;
-            ctx.stroke();
-          }
-        }
       }
+      
       animFrameId = requestAnimationFrame(animate);
+      window.loginCanvasAnimId = animFrameId; // Save for cleanup
     }
     animate();
     
