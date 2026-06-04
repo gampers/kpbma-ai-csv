@@ -213,7 +213,7 @@ function renderLoginView() {
     </div>
   `;
   
-  // Interactive Fluid Particles Background Effect
+  // Interactive Life & Data Pulse Wave Background Effect
   const canvas = document.getElementById("login-bg-canvas");
   const wrap = document.querySelector(".login-wrap");
   if (canvas && wrap) {
@@ -230,184 +230,200 @@ function renderLoginView() {
     });
     resizeObserver.observe(wrap);
     
-    // Fluid Particles setup
-    const particles = [];
-    const particleCount = 120; // Perfect balance for fluid aesthetics and performance
-    
-    // Mouse state with velocity tracking
-    let mouse = { x: null, y: null, lastX: null, lastY: null, vx: 0, vy: 0, radius: 180 };
+    // Mouse state
+    let mouse = { x: null, y: null, radius: 220 };
     
     wrap.addEventListener("mousemove", e => {
       const rect = wrap.getBoundingClientRect();
       mouse.x = e.clientX - rect.left;
       mouse.y = e.clientY - rect.top;
-      
-      if (mouse.lastX !== null && mouse.lastY !== null) {
-        // Calculate instantaneous velocity with dampening factor
-        mouse.vx = (mouse.x - mouse.lastX) * 0.45;
-        mouse.vy = (mouse.y - mouse.lastY) * 0.45;
-      }
-      mouse.lastX = mouse.x;
-      mouse.lastY = mouse.y;
     });
     
     wrap.addEventListener("mouseleave", () => {
       mouse.x = null;
       mouse.y = null;
-      mouse.lastX = null;
-      mouse.lastY = null;
-      mouse.vx = 0;
-      mouse.vy = 0;
     });
     
-    // Drifting vortices to simulate fluid currents (speeds and strengths increased for dynamic flow)
-    const vortices = [
-      { x: 0, y: 0, strength: 2.4, angle: 0, speed: 0.012, rx: 250, ry: 150 },
-      { x: 0, y: 0, strength: -2.8, angle: Math.PI / 2, speed: 0.009, rx: 300, ry: 200 },
-      { x: 0, y: 0, strength: 2.0, angle: Math.PI, speed: 0.006, rx: 350, ry: 250 }
+    // 3 Waves configuration (pharma-themed frequencies and speeds)
+    const waves = [
+      {
+        yBase: height * 0.5,
+        amplitude: 90,
+        frequency: 0.002,
+        phase: 0,
+        speed: 0.0084, // 0.012 * 0.7
+        color: "rgba(0, 114, 206, ", // Primary Blue
+        lineWidth: 3.5,
+        angle: 0,
+        angleRange: 0.22, // Max rotation angle in radians (approx 12.6 degrees)
+        angleSpeedMultiplier: 0.175 // 0.25 * 0.7
+      },
+      {
+        yBase: height * 0.5,
+        amplitude: 60,
+        frequency: 0.0035,
+        phase: Math.PI / 3,
+        speed: -0.0112, // -0.016 * 0.7
+        color: "rgba(0, 166, 178, ", // Neon Cyan
+        lineWidth: 2.5,
+        angle: 0,
+        angleRange: 0.18,
+        angleSpeedMultiplier: -0.224 // -0.32 * 0.7
+      },
+      {
+        yBase: height * 0.5,
+        amplitude: 40,
+        frequency: 0.005,
+        phase: Math.PI * 2 / 3,
+        speed: 0.0056, // 0.008 * 0.7
+        color: "rgba(179, 215, 255, ", // Soft Blue
+        lineWidth: 1.8,
+        angle: 0,
+        angleRange: 0.14,
+        angleSpeedMultiplier: 0.126 // 0.18 * 0.7
+      }
     ];
     
-    class FluidParticle {
-      constructor() {
-        this.reset();
+    // Particles flowing along waves
+    const particles = [];
+    const particleCount = 60;
+    
+    class WaveParticle {
+      constructor(waveIndex) {
+        this.waveIndex = waveIndex;
         this.x = Math.random() * width;
-        this.y = Math.random() * height;
-      }
-      
-      reset() {
-        this.x = Math.random() * width;
-        this.y = Math.random() * height;
-        this.vx = (Math.random() - 0.5) * 0.8;
-        this.vy = (Math.random() - 0.5) * 0.8;
-        this.radius = Math.random() * 1.5 + 0.8;
+        this.speed = (Math.random() * 2.0 + 1.2) * 0.7; // 0.7x speed
+        this.radius = Math.random() * 3.0 + 1.8;
+        this.alpha = Math.random() * 0.4 + 0.4;
         this.history = [];
-        this.maxHistory = Math.floor(Math.random() * 8) + 8; // 8 to 15 frames trail
-        
-        // Pharma/KPBMA gradient colors
-        const colors = [
-          "rgba(0, 166, 178, ",  // Neon Cyan
-          "rgba(0, 114, 206, ",  // Primary Blue
-          "rgba(179, 215, 255, " // Soft Blue
-        ];
-        this.colorBase = colors[Math.floor(Math.random() * colors.length)];
-        this.alpha = Math.random() * 0.3 + 0.2; // Opacity between 0.2 and 0.5
-        this.speedLimit = Math.random() * 2.5 + 2.0; // Higher speed cap (2.0 to 4.5)
+        this.maxHistory = Math.floor(Math.random() * 8) + 8; // Trail length
       }
       
-      update() {
+      update(waveYMap) {
+        this.x += this.speed;
+        
+        // Wrap around screen boundaries
+        if (this.x > width) {
+          this.x = 0;
+          this.history = [];
+        }
+        
+        // Find Y coordinate from wave's Y map (interpolated or closest x)
+        const closestX = Math.round(this.x);
+        const yOnWave = waveYMap[closestX] !== undefined ? waveYMap[closestX] : (height * 0.5);
+        this.y = yOnWave + (Math.sin(this.x * 0.05) * 4); // Add subtle offset oscillation
+        
         this.history.push({ x: this.x, y: this.y });
         if (this.history.length > this.maxHistory) {
           this.history.shift();
         }
-        
-        // 1. Apply slowly moving vortex fields
-        vortices.forEach(v => {
-          const dx = v.x - this.x;
-          const dy = v.y - this.y;
-          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-          const force = v.strength / (dist + 120);
-          
-          // Cross product swirl force
-          this.vx += (dy / dist) * force;
-          this.vy += (-dx / dist) * force;
-        });
-        
-        // 2. Slow drag friction (less drag for longer momentum)
-        this.vx *= 0.978;
-        this.vy *= 0.978;
-        
-        // 3. Mouse influence
-        if (mouse.x !== null && mouse.y !== null) {
-          const dx = this.x - mouse.x;
-          const dy = this.y - mouse.y;
-          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-          
-          if (dist < mouse.radius) {
-            const force = (mouse.radius - dist) / mouse.radius;
-            
-            // Drag along with mouse velocity
-            this.vx += mouse.vx * force * 0.25;
-            this.vy += mouse.vy * force * 0.25;
-            
-            // Swirl around cursor (clockwise)
-            this.vx += (-dy / dist) * force * 1.8;
-            this.vy += (dx / dist) * force * 1.8;
-            
-            // Push away from cursor slightly
-            this.vx += (dx / dist) * force * 0.4;
-            this.vy += (dy / dist) * force * 0.4;
-          }
-        }
-        
-        // Cap speed
-        const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy) || 1;
-        if (speed > this.speedLimit) {
-          this.vx = (this.vx / speed) * this.speedLimit;
-          this.vy = (this.vy / speed) * this.speedLimit;
-        }
-        
-        // Move
-        this.x += this.vx;
-        this.y += this.vy;
-        
-        // Respawn if off screen
-        if (this.x < -30 || this.x > width + 30 || this.y < -30 || this.y > height + 30) {
-          this.reset();
-        }
       }
       
-      draw() {
+      draw(waveColor) {
         if (this.history.length < 2) return;
         
-        // Draw fluid path trail
-        ctx.beginPath();
-        ctx.moveTo(this.history[0].x, this.history[0].y);
+        // Draw trailing path as a spindle-shaped glowing streak (no distinct round head)
         for (let i = 1; i < this.history.length; i++) {
-          ctx.lineTo(this.history[i].x, this.history[i].y);
+          const pt1 = this.history[i - 1];
+          const pt2 = this.history[i];
+          
+          // Calculate progress from tail (0) to head (1)
+          const progress = i / (this.history.length - 1);
+          
+          // Spindle shape envelope: thin at tail, thickest near the front, then tapers slightly at head
+          const shapeFactor = Math.sin(progress * Math.PI * 0.95 + 0.05);
+          const currentWidth = this.radius * (0.15 + 0.85 * shapeFactor);
+          
+          // Opacity fades out towards the tail
+          const currentAlpha = this.alpha * 0.7 * shapeFactor;
+          
+          ctx.beginPath();
+          ctx.moveTo(pt1.x, pt1.y);
+          ctx.lineTo(pt2.x, pt2.y);
+          ctx.strokeStyle = waveColor + currentAlpha + ")";
+          ctx.lineWidth = currentWidth;
+          ctx.lineCap = "round";
+          
+          // Apply a subtle glow shadow directly to the segment
+          ctx.shadowBlur = 6;
+          ctx.shadowColor = waveColor.includes("166") ? "#00A6B2" : "#0072CE";
+          
+          ctx.stroke();
+          ctx.shadowBlur = 0; // Reset
         }
-        ctx.strokeStyle = this.colorBase + this.alpha + ")";
-        ctx.lineWidth = this.radius;
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-        ctx.stroke();
-        
-        // Draw bright head
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius * 1.4, 0, Math.PI * 2);
-        ctx.fillStyle = this.colorBase + (this.alpha * 1.5) + ")";
-        ctx.fill();
       }
     }
     
-    // Create particles
+    // Initialize particles distributed across the waves
     for (let i = 0; i < particleCount; i++) {
-      particles.push(new FluidParticle());
+      particles.push(new WaveParticle(i % waves.length));
     }
     
     let animFrameId;
     function animate() {
       ctx.clearRect(0, 0, width, height);
       
-      // Update vortex positions
-      vortices.forEach((v, index) => {
-        v.angle += v.speed;
-        const centerX = width / 2;
-        const centerY = height / 2;
-        v.x = centerX + Math.cos(v.angle * (index + 1)) * v.rx;
-        v.y = centerY + Math.sin(v.angle * (index + 2)) * v.ry;
+      // Update wave base positions and dynamic flow angles
+      waves.forEach(w => {
+        w.yBase = height * 0.5;
+        w.phase += w.speed;
+        // Swing the angle between positive (top-left to bottom-right) and negative (bottom-left to top-right)
+        w.angle = Math.sin(w.phase * w.angleSpeedMultiplier) * w.angleRange;
       });
       
-      // Decay mouse velocity if mouse is not moving
-      if (mouse.x !== null && mouse.y !== null) {
-        mouse.vx *= 0.9;
-        mouse.vy *= 0.9;
-      }
+      // Store the y-coordinates of each wave across all screen x-values
+      // to map particles to them and draw them
+      const waveYMaps = waves.map(() => new Float32Array(width + 1));
       
-      // Update and draw particles
-      for (let i = 0; i < particles.length; i++) {
-        particles[i].update();
-        particles[i].draw();
-      }
+      // 1. Compute and draw the waves
+      waves.forEach((w, waveIdx) => {
+        const yMap = waveYMaps[waveIdx];
+        
+        ctx.beginPath();
+        for (let x = 0; x <= width; x += 4) {
+          // Base Y calculation including rotation factor:
+          // Center coordinate is used as reference pivot, (x - width/2) * Math.tan(angle) tilts the line
+          let y = w.yBase + (x - width / 2) * Math.tan(w.angle) + Math.sin((x * Math.cos(w.angle)) * w.frequency + w.phase) * w.amplitude;
+          
+          // Apply mouse cursor distortion
+          if (mouse.x !== null && mouse.y !== null) {
+            const dx = x - mouse.x;
+            const dy = y - mouse.y;
+            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            
+            if (dist < mouse.radius) {
+              const force = (mouse.radius - dist) / mouse.radius;
+              // Push the wave lines vertically away from the cursor
+              const pushDirection = dy >= 0 ? 1 : -1;
+              y += pushDirection * force * 80;
+            }
+          }
+          
+          // Save computed Y for particles (fill in step gaps)
+          for (let step = 0; step < 4; step++) {
+            if (x + step <= width) {
+              yMap[x + step] = y;
+            }
+          }
+          
+          if (x === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+        
+        // Draw the main glowing wave line
+        ctx.strokeStyle = w.color + "0.3)"; // Base wave opacity
+        ctx.lineWidth = w.lineWidth;
+        ctx.stroke();
+      });
+      
+      // 2. Update and draw particles along their mapped waves
+      particles.forEach(p => {
+        p.update(waveYMaps[p.waveIndex]);
+        p.draw(waves[p.waveIndex].color);
+      });
       
       animFrameId = requestAnimationFrame(animate);
       window.loginCanvasAnimId = animFrameId; // Save for cleanup
