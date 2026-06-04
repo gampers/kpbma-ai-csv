@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>시험성적서 발행 시스템 - Audit Trail</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/app.js" defer></script>
+    <script src="js/audit.js" defer></script>
+</head>
+<body>
+    <header id="header"></header>
+    <main class="page">
+        <div class="page-header">
+            <div>
+                <h2>Audit Trail</h2>
+                <p>시스템 주요 이벤트 이력을 조회합니다.</p>
+            </div>
+        </div>
+
+        <section class="panel">
+            <div class="filters">
+                <div class="field">
+                    <label for="auditKeyword">키워드</label>
+                    <input id="auditKeyword" placeholder="사용자, 이벤트, 상세내용">
+                </div>
+                <div class="field">
+                    <label for="auditEventType">이벤트</label>
+                    <select id="auditEventType">
+                        <option value="">전체</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="auditFromDate">시작일</label>
+                    <input id="auditFromDate" type="date">
+                </div>
+                <div class="field">
+                    <label for="auditToDate">종료일</label>
+                    <input id="auditToDate" type="date">
+                </div>
+                <button class="btn secondary" id="auditReset" type="button">필터 초기화</button>
+            </div>
+            <div id="auditTable" class="table-wrap"></div>
+        </section>
+    </main>
+</body>
+</html>

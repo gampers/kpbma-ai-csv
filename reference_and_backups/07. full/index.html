@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GMP 컴퓨터화 시스템 통합 포털 (CSV 교육 데모)</title>
+<style>
+:root{
+  --green-brand:#006241; --green-accent:#00754A; --green-house:#1E3932; --green-uplift:#2b5148;
+  --green-light:#d4e9e2; --gold:#cba258; --gold-lightest:#faf6ee;
+  --canvas:#f2f0eb; --ceramic:#edebe9; --white:#ffffff; --cool:#f9f9f9;
+  --ink:rgba(0,0,0,0.87); --ink-soft:rgba(0,0,0,0.58); --ink-faint:rgba(0,0,0,0.30);
+  --white-soft:rgba(255,255,255,0.70);
+  --red:#c82014; --red-tint:hsl(4 82% 43% / 7%);
+  --card-shadow:0 0 .5px rgba(0,0,0,0.14), 0 1px 1px rgba(0,0,0,0.24);
+  --card-shadow-h:0 6px 22px rgba(0,0,0,0.13), 0 2px 4px rgba(0,0,0,0.10);
+  --nav-shadow:0 1px 3px rgba(0,0,0,0.1), 0 2px 2px rgba(0,0,0,0.06), 0 0 2px rgba(0,0,0,0.07);
+  --radius-card:14px; --radius-pill:50px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'Pretendard','Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  background:var(--canvas);color:var(--ink);font-size:15px;line-height:1.5;letter-spacing:-0.01em}
+h1,h2,h3{letter-spacing:-0.16px}
+button{font-family:inherit}
+.btn{display:inline-flex;align-items:center;gap:6px;border-radius:var(--radius-pill);padding:8px 18px;
+  font-size:14px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:all .2s ease;text-decoration:none}
+.btn:active{transform:scale(0.96)}
+.btn-primary{background:var(--green-accent);border-color:var(--green-accent);color:#fff}
+.btn-primary:hover{background:#00633f}
+.btn-ghost{background:transparent;border-color:rgba(255,255,255,0.5);color:#fff}
+.btn-ghost:hover{background:rgba(255,255,255,0.12)}
+
+/* ---------- 로그인 ---------- */
+.login-page{min-height:100vh;display:flex;flex-direction:column;
+  background:linear-gradient(140deg, var(--green-house) 0%, var(--green-brand) 100%)}
+.login-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:32px 16px}
+.login-card{background:#fff;border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,0.30);width:100%;max-width:440px;padding:44px 40px}
+.login-badge{display:inline-block;background:var(--green-light);color:var(--green-brand);
+  border-radius:50px;padding:5px 14px;font-size:12px;font-weight:700;margin-bottom:18px}
+.login-card h1{color:var(--green-house);font-size:23px;font-weight:800;margin-bottom:8px;line-height:1.3}
+.login-card .sub{color:var(--ink-soft);font-size:13.5px;margin-bottom:28px;line-height:1.6}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.field label{font-size:12.5px;font-weight:700;color:var(--ink-soft)}
+.field input{border:1px solid #d6dbde;border-radius:9px;padding:12px 14px;font-size:15px;outline:none;transition:border-color .15s}
+.field input:focus{border-color:var(--green-accent);background:hsl(160 32% 87% / 20%)}
+.login-card .submit{width:100%;justify-content:center;padding:13px;font-size:15px;margin-top:6px}
+.login-hint{margin-top:22px;padding:14px 16px;background:var(--cool);border-radius:10px;font-size:12.5px;color:var(--ink-soft);line-height:1.8}
+.login-hint b{color:var(--ink)}
+.login-foot{text-align:center;color:var(--white-soft);font-size:12px;padding:18px}
+
+/* ---------- 런처 ---------- */
+.hub-top{background:var(--green-house);color:#fff;box-shadow:var(--nav-shadow)}
+.hub-top .bar{max-width:1120px;margin:0 auto;padding:18px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.hub-top .brand{display:flex;align-items:center;gap:14px}
+.hub-top .brand .logo{width:44px;height:44px;border-radius:12px;background:var(--green-accent);
+  display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800}
+.hub-top .brand .t1{font-size:17px;font-weight:800}
+.hub-top .brand .t2{font-size:12px;color:var(--white-soft);margin-top:2px}
+.hub-top .who{font-size:13.5px;color:var(--white-soft);display:flex;align-items:center;gap:12px}
+.hub-top .who b{color:#fff}
+.hub-top .who .chip{background:var(--green-accent);color:#fff;border-radius:50px;padding:3px 12px;font-size:11.5px;font-weight:700}
+
+.hub-body{max-width:1120px;margin:0 auto;padding:32px 28px 60px}
+.hub-intro{margin-bottom:26px}
+.hub-intro h2{color:var(--green-brand);font-size:22px;font-weight:800;margin-bottom:6px}
+.hub-intro p{color:var(--ink-soft);font-size:14px;line-height:1.7;max-width:760px}
+.hub-band{background:var(--gold-lightest);border:1px solid var(--gold);border-radius:12px;padding:14px 20px;margin-bottom:26px;
+  font-size:13px;color:#7a5f25;line-height:1.7}
+.hub-band b{color:#5e4a1c}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:18px}
+.sys-card{background:#fff;border-radius:var(--radius-card);box-shadow:var(--card-shadow);padding:24px;
+  display:flex;flex-direction:column;gap:12px;text-decoration:none;color:var(--ink);
+  border:1px solid transparent;transition:box-shadow .2s ease, transform .15s ease, border-color .2s ease;position:relative;overflow:hidden}
+.sys-card:hover{box-shadow:var(--card-shadow-h);transform:translateY(-3px);border-color:var(--green-light)}
+.sys-card .num{position:absolute;top:18px;right:22px;font-size:40px;font-weight:800;color:var(--ceramic);line-height:1}
+.sys-card .ico{width:52px;height:52px;border-radius:14px;background:var(--green-house);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:26px}
+.sys-card .title{font-size:17px;font-weight:800;color:var(--green-house)}
+.sys-card .en{font-size:11.5px;color:var(--ink-faint);letter-spacing:.04em;margin-top:2px;text-transform:uppercase}
+.sys-card .desc{font-size:13px;color:var(--ink-soft);line-height:1.6;flex:1}
+.sys-card .foot{display:flex;align-items:center;justify-content:space-between;margin-top:4px}
+.sys-card .domain{display:inline-block;background:var(--green-light);color:var(--green-brand);
+  border-radius:50px;padding:3px 11px;font-size:11px;font-weight:700}
+.sys-card .open{font-size:13px;font-weight:700;color:var(--green-accent)}
+.sys-card:hover .open{text-decoration:underline}
+
+.hub-footer{max-width:1120px;margin:0 auto;padding:0 28px 40px;color:var(--ink-faint);font-size:12px;line-height:1.7}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+(function(){
+'use strict';
+var SUITE_KEY = 'gxpsuite:session';
+/* 단일 통합 계정 (시연용) */
+var SUITE_ACCOUNTS = [
+  {userId:'admin', password:'admin', name:'통합 관리자'}
+];
+
+var SYSTEMS = [
+  {n:'1', file:'coa.html', ico:'📄', title:'시험성적서(COA) 발행', en:'Certificate of Analysis', domain:'QC',
+   desc:'시험 결과 입력 → 승인 → COA 발행. 결재 워크플로우, 전자서명, 정밀도 표기, 감사추적.'},
+  {n:'2', file:'lm.html', ico:'🎓', title:'교육 이수 관리', en:'Learning Management', domain:'QA / HR',
+   desc:'교육 평가 입력 → 합격 자동판정 → QA 승인 → 이수증·교육이력서 발행. 재교육 주기 관리.'},
+  {n:'3', file:'elb.html', ico:'📓', title:'전자로그북', en:'Electronic Logbook', domain:'생산 / QC',
+   desc:'장비 사용기록 전자화. 작성=전자서명=확정(불변), 이력 필터, 장비사용 기록서 출력, 패스워드 정책.'},
+  {n:'4', file:'rim.html', ico:'⚗️', title:'시약/표준품 재고 관리', en:'Reagent Inventory', domain:'QC',
+   desc:'입고 → 사용(잔량 자동계산) → 폐기 승인. 음수 재고 차단, 유효기간 통제, 수불부 출력.'},
+  {n:'5', file:'sem.html', ico:'🏭', title:'공급업체 평가 관리', en:'Supplier Evaluation', domain:'QA / 구매',
+   desc:'항목별 점수 평가 → 등급 자동판정(A/B/C) → 승인 → ASL 등재. 재평가 주기 관리.'},
+  {n:'6', file:'cvm.html', ico:'🧼', title:'세척 검증 결과 관리', en:'Cleaning Validation', domain:'생산 / 밸리데이션',
+   desc:'샘플링 포인트별 잔류물 입력 → 허용기준 대비 자동판정(전체 AND) → QA 승인 → 검증 보고서.'}
+];
+
+function getSuite(){ try{ return JSON.parse(localStorage.getItem(SUITE_KEY)); }catch(e){ return null; } }
+function setSuite(s){ localStorage.setItem(SUITE_KEY, JSON.stringify(s)); }
+function clearSuite(){ localStorage.removeItem(SUITE_KEY); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+
+function render(){
+  getSuite() ? renderHub() : renderLogin();
+}
+
+/* ---------- 로그인 ---------- */
+function renderLogin(){
+  document.getElementById('root').innerHTML =
+  '<div class="login-page">'+
+    '<div class="login-wrap"><div class="login-card">'+
+      '<div class="login-badge">CSV 교육 데모 · GAMP Category 5</div>'+
+      '<h1>GMP 컴퓨터화 시스템<br>통합 포털</h1>'+
+      '<div class="sub">하나의 계정으로 로그인한 뒤, 6개 GMP 실습 시스템을 선택하여 사용합니다.<br>한국제약바이오협회 AI 바이브코딩 CSV 실습 교육 시연용.</div>'+
+      '<form id="login-form">'+
+        '<div class="field"><label>사용자 ID</label><input id="lg-id" autocomplete="off" value="admin"></div>'+
+        '<div class="field"><label>비밀번호</label><input id="lg-pw" type="password" autocomplete="off" placeholder="비밀번호"></div>'+
+        '<button type="submit" class="btn btn-primary submit">로그인</button>'+
+      '</form>'+
+      '<div class="login-hint"><b>통합 시연 계정</b><br>ID <b>admin</b> / PW <b>admin</b><br>'+
+      '<span style="color:var(--ink-faint)">로그인하면 6개 시스템 모든 화면·기능에 접근할 수 있습니다. (전자서명 비밀번호도 admin)</span></div>'+
+    '</div></div>'+
+    '<div class="login-foot">㈜갬프연구소 (GAMPLAB) · 실습 시스템은 localStorage 기반 교육용 데모입니다.</div>'+
+  '</div>';
+  var form = document.getElementById('login-form');
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var id = document.getElementById('lg-id').value.trim();
+    var pw = document.getElementById('lg-pw').value;
+    var acc = SUITE_ACCOUNTS.find(function(a){ return a.userId===id && a.password===pw; });
+    if(!acc){ alert('ID 또는 비밀번호가 올바르지 않습니다. (admin / admin)'); return; }
+    setSuite({userId:acc.userId, name:acc.name, loginAt:new Date().toISOString()});
+    renderHub();
+  });
+  document.getElementById('lg-pw').focus();
+}
+
+/* ---------- 런처 ---------- */
+function renderHub(){
+  var s = getSuite();
+  var cards = SYSTEMS.map(function(sys){
+    return '<a class="sys-card" href="'+sys.file+'">'+
+      '<div class="num">'+sys.n+'</div>'+
+      '<div class="ico">'+sys.ico+'</div>'+
+      '<div><div class="title">'+esc(sys.title)+'</div><div class="en">'+esc(sys.en)+'</div></div>'+
+      '<div class="desc">'+esc(sys.desc)+'</div>'+
+      '<div class="foot"><span class="domain">'+esc(sys.domain)+'</span><span class="open">시스템 열기 →</span></div>'+
+    '</a>';
+  }).join('');
+  document.getElementById('root').innerHTML =
+  '<div class="hub-top"><div class="bar">'+
+    '<div class="brand"><div class="logo">G</div><div>'+
+      '<div class="t1">GMP 컴퓨터화 시스템 통합 포털</div>'+
+      '<div class="t2">CSV 실습 교육 데모 · GAMPLAB</div></div></div>'+
+    '<div class="who"><span><b>'+esc(s.name)+'</b> ('+esc(s.userId)+')</span>'+
+      '<span class="chip">통합 접근</span>'+
+      '<button class="btn btn-ghost" id="btn-logout">로그아웃</button></div>'+
+  '</div></div>'+
+  '<div class="hub-body">'+
+    '<div class="hub-intro"><h2>시스템 선택</h2>'+
+      '<p>사용할 GMP 실습 시스템을 선택하세요. 모든 시스템은 동일한 통합 계정으로 자동 로그인되며, 시스템 내부에서 <b>⊞ 시스템 선택</b> 버튼으로 이 화면에 다시 돌아올 수 있습니다.</p></div>'+
+    '<div class="hub-band">⚐ <b>시연 안내</b> — 통합 계정은 각 시스템의 모든 역할(작성·승인·관리) 권한을 가집니다. 전자서명이 필요한 작업에서는 비밀번호 <b>admin</b>을 입력하세요. 각 시스템의 데이터는 시스템별로 독립 저장되며, 브라우저를 닫아도 유지됩니다.</div>'+
+    '<div class="grid">'+cards+'</div>'+
+  '</div>'+
+  '<div class="hub-footer">6개 시스템은 각각 단일 HTML 파일(외부 의존성 0)로 동작하는 GAMP Category 5 교육용 데모입니다. '+
+    '실제 운영 시스템은 서버 DB, 검증된 환경, 강화된 전자서명·접근통제가 필요합니다 (교육 토론 주제).</div>';
+  document.getElementById('btn-logout').addEventListener('click', function(){
+    clearSuite();
+    renderLogin();
+  });
+}
+
+render();
+})();
+</script>
+</body>
+</html>

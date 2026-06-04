@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>시험성적서 발행 시스템 - 환경설정</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/app.js" defer></script>
+    <script src="js/settings.js" defer></script>
+</head>
+<body>
+    <header id="header"></header>
+    <main class="page">
+        <div class="page-header">
+            <div>
+                <h2>환경설정</h2>
+                <p>문서번호 규칙, 장비 목록, 자동 백업 시간을 관리합니다.</p>
+            </div>
+            <button class="btn accent" id="manualBackupButton" type="button">수동 백업</button>
+        </div>
+
+        <section class="panel">
+            <div id="settingsAlert" class="alert"></div>
+            <form id="settingsForm">
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="documentPrefix">문서번호 Prefix</label>
+                        <input id="documentPrefix" placeholder="COA">
+                    </div>
+                    <div class="field">
+                        <label for="backupTime">자동 백업 시간</label>
+                        <input id="backupTime" type="time">
+                    </div>
+                    <div class="field">
+                        <label for="autoBackupEnabled">자동 백업 사용</label>
+                        <select id="autoBackupEnabled">
+                            <option value="true">사용</option>
+                            <option value="false">미사용</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>마지막 백업일</label>
+                        <input id="lastBackupDate" disabled>
+                    </div>
+                    <div class="field full">
+                        <label for="equipmentList">장비 목록</label>
+                        <textarea id="equipmentList" placeholder="한 줄에 장비 하나씩 입력"></textarea>
+                    </div>
+                </div>
+                <div class="actions">
+                    <button class="btn" type="submit">설정 저장</button>
+                </div>
+            </form>
+        </section>
+    </main>
+</body>
+</html>

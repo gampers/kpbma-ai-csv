@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>전자로그북 - 이력 조회</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+    <div id="header"></div>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <span>이력 조회</span>
+                <button class="btn btn-primary btn-sm" onclick="exportPDF()">PDF 출력</button>
+            </div>
+            <div class="card-body">
+                <div class="filter-bar">
+                    <div class="form-group">
+                        <label>장비명</label>
+                        <select id="filterEquipment" onchange="applyFilter()">
+                            <option value="">전체</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>시작일</label>
+                        <input type="date" id="filterDateFrom" onchange="applyFilter()">
+                    </div>
+                    <div class="form-group">
+                        <label>종료일</label>
+                        <input type="date" id="filterDateTo" onchange="applyFilter()">
+                    </div>
+                    <div class="form-group">
+                        <label>작성자</label>
+                        <select id="filterUser" onchange="applyFilter()">
+                            <option value="">전체</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="clearFilter()">필터 초기화</button>
+                </div>
+
+                <div id="resultCount" style="margin-bottom:12px; font-size:13px; color:#666;"></div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>No.</th>
+                                <th>장비명</th>
+                                <th>작업 시작 시간</th>
+                                <th>작업 종료 시간</th>
+                                <th>사용 목적</th>
+                                <th>서명자</th>
+                                <th>전자서명 일시</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logTable"></tbody>
+                    </table>
+                </div>
+
+                <div id="noData" style="display:none; text-align:center; padding:40px; color:#999;">
+                    조회된 기록이 없습니다.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="logoutWarning" class="logout-warning"></div>
+
+    <script src="js/app.js"></script>
+    <script>
+        const session = initPage('history');
+        let filteredLogs = [];
+
+        if (session) {
+            loadFilters();
+            applyFilter();
+        }
+
+        function loadFilters() {
+            const logs = JSON.parse(localStorage.getItem('logRecords') || '[]');
+
+            // 장비 필터
+            const equipments = [...new Set(logs.map(l => l.equipment))];
+            const eqSelect = document.getElementById('filterEquipment');
+            equipments.forEach(eq => {
+                const opt = document.createElement('option');
+                opt.value = eq;
+                opt.textContent = eq;
+                eqSelect.appendChild(opt);
+            });
+
+            // 작성자 필터
+            const users = [...new Set(logs.map(l => l.signedBy))];
+            const userSelect = document.getElementById('filterUser');
+            users.forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u;
+                opt.textContent = u;
+                userSelect.appendChild(opt);
+            });
+        }
+
+        function applyFilter() {
+            const logs = JSON.parse(localStorage.getItem('logRecords') || '[]');
+            const equipment = document.getElementById('filterEquipment').value;
+            const dateFrom = document.getElementById('filterDateFrom').value;
+            const dateTo = document.getElementById('filterDateTo').value;
+            const user = document.getElementById('filterUser').value;
+
+            filteredLogs = logs.filter(log => {
+                if (equipment && log.equipment !== equipment) return false;
+                if (user && log.signedBy !== user) return false;
+                if (dateFrom) {
+                    const logDate = log.startTime.split('T')[0];
+                    if (logDate < dateFrom) return false;
+                }
+                if (dateTo) {
+                    const logDate = log.startTime.split('T')[0];
+                    if (logDate > dateTo) return false;
+                }
+                return true;
+            });
+
+            renderTable();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('logTable');
+            const noData = document.getElementById('noData');
+            const countEl = document.getElementById('resultCount');
+
+            countEl.textContent = '조회 결과: ' + filteredLogs.length + '건';
+
+            if (filteredLogs.length === 0) {
+                tbody.innerHTML = '';
+                noData.style.display = 'block';
+                return;
+            }
+
+            noData.style.display = 'none';
+            tbody.innerHTML = filteredLogs.map((log, i) => `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td>${escapeHtml(log.equipment)}</td>
+                    <td>${formatDateTime(log.startTime)}</td>
+                    <td>${formatDateTime(log.endTime)}</td>
+                    <td>${escapeHtml(log.purpose)}</td>
+                    <td>${escapeHtml(log.signedName)} (${escapeHtml(log.signedBy)})</td>
+                    <td>${formatDateTime(log.signedAt)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function clearFilter() {
+            document.getElementById('filterEquipment').value = '';
+            document.getElementById('filterDateFrom').value = '';
+            document.getElementById('filterDateTo').value = '';
+            document.getElementById('filterUser').value = '';
+            applyFilter();
+        }
+
+        function exportPDF() {
+            if (filteredLogs.length === 0) {
+                alert('출력할 데이터가 없습니다.');
+                return;
+            }
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('l', 'mm', 'a4');
+
+                const printTime = formatDateTime(new Date());
+
+                // 제목
+                doc.setFontSize(16);
+                doc.text('Electronic Logbook - Equipment Usage Record', 14, 15);
+
+                doc.setFontSize(10);
+                doc.text('Print Date/Time: ' + printTime, 14, 22);
+                doc.text('Printed by: ' + session.userName + ' (' + session.userId + ')', 14, 28);
+
+                // 테이블 데이터
+                const tableData = filteredLogs.map((log, i) => [
+                    i + 1,
+                    log.equipment,
+                    formatDateTime(log.startTime),
+                    formatDateTime(log.endTime),
+                    log.purpose,
+                    log.signedName + ' (' + log.signedBy + ')',
+                    formatDateTime(log.signedAt)
+                ]);
+
+                doc.autoTable({
+                    startY: 34,
+                    head: [['No.', 'Equipment', 'Start Time', 'End Time', 'Purpose', 'Signed By', 'Signed At']],
+                    body: tableData,
+                    styles: { fontSize: 8 },
+                    headStyles: { fillColor: [26, 58, 92] },
+                    didDrawPage: function(data) {
+                        // 하단 출력시간
+                        doc.setFontSize(8);
+                        doc.text('Printed: ' + printTime, 14, doc.internal.pageSize.height - 10);
+                        doc.text('Page ' + doc.internal.getCurrentPageInfo().pageNumber, doc.internal.pageSize.width - 30, doc.internal.pageSize.height - 10);
+                    }
+                });
+
+                doc.save('Electronic_Logbook_' + formatDate(new Date()) + '.pdf');
+
+                addAuditLog('PDF_EXPORT', session.userId, session.userName,
+                    'PDF 출력 - ' + filteredLogs.length + '건');
+            } catch (e) {
+                alert('PDF 출력에 인터넷 연결이 필요합니다. (jsPDF CDN)');
+            }
+        }
+    </script>
+</body>
+</html>

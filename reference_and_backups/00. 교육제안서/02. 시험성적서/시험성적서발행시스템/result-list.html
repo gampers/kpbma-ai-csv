@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>시험성적서 발행 시스템 - 결과 조회/수정</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/app.js" defer></script>
+    <script src="js/results.js" defer></script>
+</head>
+<body>
+    <header id="header"></header>
+    <main class="page">
+        <div class="page-header">
+            <div>
+                <h2>결과 조회/수정</h2>
+                <p>승인 완료 결과는 수정할 수 없습니다.</p>
+            </div>
+        </div>
+
+        <section class="panel">
+            <div class="filters">
+                <div class="field">
+                    <label for="keywordFilter">키워드</label>
+                    <input id="keywordFilter" placeholder="문서번호, 품목, 검체, 장비">
+                </div>
+                <div class="field">
+                    <label for="statusFilter">상태</label>
+                    <select id="statusFilter">
+                        <option value="">전체</option>
+                        <option value="Draft">미승인</option>
+                        <option value="Approved">승인완료</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="fromDateFilter">시작일</label>
+                    <input id="fromDateFilter" type="date">
+                </div>
+                <div class="field">
+                    <label for="toDateFilter">종료일</label>
+                    <input id="toDateFilter" type="date">
+                </div>
+                <button class="btn secondary" id="resetFilters" type="button">필터 초기화</button>
+            </div>
+            <div id="resultListAlert" class="alert"></div>
+            <div id="resultsTable" class="table-wrap"></div>
+        </section>
+
+        <section id="editPanel" class="panel hidden">
+            <div class="panel-title">
+                <h3>시험결과 수정</h3>
+                <button class="btn secondary small" id="cancelEdit" type="button">닫기</button>
+            </div>
+            <div id="editAlert" class="alert"></div>
+            <form id="editForm">
+                <input id="editId" type="hidden">
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="editTestDate">시험일자 <span class="required">*</span></label>
+                        <input id="editTestDate" type="date" required>
+                    </div>
+                    <div class="field">
+                        <label for="editProductName">품목명</label>
+                        <input id="editProductName">
+                    </div>
+                    <div class="field">
+                        <label for="editSampleName">검체명</label>
+                        <input id="editSampleName">
+                    </div>
+                    <div class="field">
+                        <label for="editLotNo">제조번호/Lot No.</label>
+                        <input id="editLotNo">
+                    </div>
+                    <div class="field">
+                        <label for="editTestItem">시험항목</label>
+                        <input id="editTestItem">
+                    </div>
+                    <div class="field">
+                        <label for="editEquipment">시험 장비 <span class="required">*</span></label>
+                        <input id="editEquipment" list="editEquipmentOptions" required>
+                        <datalist id="editEquipmentOptions"></datalist>
+                    </div>
+                    <div class="field full">
+                        <label for="editSpecificationMethod">시험기준/방법 <span class="required">*</span></label>
+                        <textarea id="editSpecificationMethod" required></textarea>
+                    </div>
+                    <div class="field">
+                        <label for="editResultValue">결과값 <span class="required">*</span></label>
+                        <input id="editResultValue" required>
+                    </div>
+                    <div class="field">
+                        <label for="editUnit">단위</label>
+                        <input id="editUnit">
+                    </div>
+                    <div class="field full">
+                        <label for="editReason">수정 사유 <span class="required">*</span></label>
+                        <textarea id="editReason" required placeholder="수정 사유를 입력하세요."></textarea>
+                    </div>
+                </div>
+                <div class="actions">
+                    <button class="btn" type="submit">수정 저장</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="panel">
+            <div class="panel-title">
+                <h3>변경 이력</h3>
+            </div>
+            <div id="changeHistoryTable" class="table-wrap"></div>
+        </section>
+    </main>
+</body>
+</html>

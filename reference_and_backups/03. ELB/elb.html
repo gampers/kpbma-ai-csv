@@ -1,0 +1,1204 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>전자로그북 기록 시스템 (ELB)</title>
+<style>
+/* ============================================================
+   전자로그북 기록 시스템 v2 — Starbucks Design System 기반
+   ============================================================ */
+:root{
+  --green-brand:#006241; --green-accent:#00754A; --green-house:#1E3932; --green-uplift:#2b5148;
+  --green-light:#d4e9e2; --gold:#cba258; --gold-lightest:#faf6ee;
+  --canvas:#f2f0eb; --ceramic:#edebe9; --white:#ffffff; --cool:#f9f9f9;
+  --ink:rgba(0,0,0,0.87); --ink-soft:rgba(0,0,0,0.58); --ink-faint:rgba(0,0,0,0.30);
+  --white-soft:rgba(255,255,255,0.70);
+  --red:#c82014; --red-tint:hsl(4 82% 43% / 7%); --amber:#b07d1e; --amber-tint:#fdf3e0;
+  --card-shadow:0 0 .5px rgba(0,0,0,0.14), 0 1px 1px rgba(0,0,0,0.24);
+  --nav-shadow:0 1px 3px rgba(0,0,0,0.1), 0 2px 2px rgba(0,0,0,0.06), 0 0 2px rgba(0,0,0,0.07);
+  --radius-card:12px; --radius-pill:50px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:'Pretendard','Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  background:var(--canvas); color:var(--ink); font-size:15px; line-height:1.5; letter-spacing:-0.01em;
+}
+h1,h2,h3{letter-spacing:-0.16px}
+button{font-family:inherit}
+input,select,textarea{font-family:inherit;font-size:15px;color:var(--ink)}
+
+/* 버튼 */
+.btn{display:inline-flex;align-items:center;gap:6px;border-radius:var(--radius-pill);padding:8px 18px;
+  font-size:14px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:all .2s ease;
+  text-decoration:none;white-space:nowrap}
+.btn:active{transform:scale(0.95)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn-primary{background:var(--green-accent);border-color:var(--green-accent);color:#fff}
+.btn-primary:hover:not(:disabled){background:#00633f}
+.btn-outline{background:transparent;border-color:var(--green-accent);color:var(--green-accent)}
+.btn-outline:hover:not(:disabled){background:rgba(0,117,74,0.06)}
+.btn-danger{background:transparent;border-color:var(--red);color:var(--red)}
+.btn-danger:hover:not(:disabled){background:var(--red-tint)}
+.btn-ghost{background:transparent;border-color:rgba(0,0,0,0.3);color:var(--ink)}
+.btn-white{background:#fff;border-color:#fff;color:var(--green-accent)}
+.btn-sm{padding:5px 14px;font-size:13px}
+
+/* 로그인 */
+.login-page{min-height:100vh;display:flex;flex-direction:column}
+.login-band{background:var(--green-house);color:#fff;padding:48px 24px;text-align:center}
+.login-band h1{font-size:26px;font-weight:700;margin-bottom:8px}
+.login-band p{color:var(--white-soft);font-size:14px}
+.login-band .clock{font-size:15px;color:var(--gold);margin-top:14px;font-variant-numeric:tabular-nums;letter-spacing:.05em}
+.login-wrap{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:48px 16px}
+.login-card{background:#fff;border-radius:var(--radius-card);box-shadow:var(--card-shadow);width:100%;max-width:420px;padding:40px 36px}
+.login-card h2{color:var(--green-brand);font-size:20px;font-weight:700;margin-bottom:24px;text-align:center}
+.login-hint{margin-top:20px;padding:14px;background:var(--cool);border-radius:8px;font-size:12.5px;color:var(--ink-soft);line-height:1.7}
+.login-hint b{color:var(--ink)}
+
+/* 레이아웃 */
+.app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+.sidebar{background:var(--green-house);color:#fff;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.side-logo{padding:24px 22px 18px;border-bottom:1px solid rgba(255,255,255,0.12)}
+.side-logo .t1{font-size:16px;font-weight:700}
+.side-logo .t2{font-size:11.5px;color:var(--white-soft);margin-top:3px}
+.side-nav{padding:14px 12px;flex:1}
+.nav-group{font-size:11px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:.1em;margin:16px 10px 6px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:8px;color:var(--white-soft);
+  text-decoration:none;font-size:14px;margin-bottom:2px;transition:all .15s ease}
+.nav-item:hover{background:rgba(255,255,255,0.08);color:#fff}
+.nav-item.active{background:var(--green-accent);color:#fff;font-weight:600}
+.nav-item .ico{width:18px;text-align:center;font-size:14px}
+.side-foot{padding:16px 22px;border-top:1px solid rgba(255,255,255,0.12);font-size:11.5px;color:rgba(255,255,255,0.45);line-height:1.6}
+.main{display:flex;flex-direction:column;min-width:0}
+.topbar{background:#fff;box-shadow:var(--nav-shadow);padding:0 28px;height:60px;display:flex;align-items:center;
+  justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar .clock{font-size:13.5px;color:var(--green-brand);font-weight:600;font-variant-numeric:tabular-nums}
+.topbar .right{display:flex;align-items:center;gap:14px}
+.topbar .who{font-size:13.5px;color:var(--ink)}
+.topbar .who b{color:var(--green-brand)}
+.role-chip{display:inline-block;background:var(--green-light);color:var(--green-brand);border-radius:50px;padding:2px 10px;font-size:11.5px;font-weight:700;margin-left:4px}
+.content{padding:28px;max-width:1180px;width:100%}
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px;gap:16px;flex-wrap:wrap}
+.page-head h2{color:var(--green-brand);font-size:22px;font-weight:700}
+.page-head .sub{color:var(--ink-soft);font-size:13.5px;margin-top:4px}
+
+/* 카드 */
+.card{background:#fff;border-radius:var(--radius-card);box-shadow:var(--card-shadow);padding:24px;margin-bottom:20px}
+.card h3{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:16px}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px}
+.stat-card{background:#fff;border-radius:var(--radius-card);box-shadow:var(--card-shadow);padding:20px 22px}
+.stat-card .label{font-size:12.5px;color:var(--ink-soft);margin-bottom:6px}
+.stat-card .value{font-size:30px;font-weight:700;color:var(--green-brand);line-height:1.1}
+.stat-card .foot{font-size:12px;color:var(--ink-soft);margin-top:6px}
+.stat-card.dark{background:var(--green-house)}
+.stat-card.dark .label{color:var(--white-soft)}
+.stat-card.dark .value{color:#fff}
+.stat-card.dark .foot{color:var(--white-soft)}
+
+/* 대형 KST 시계 (대시보드) — URS 16 */
+.big-clock{background:var(--green-house);border-radius:var(--radius-card);padding:34px;text-align:center;margin-bottom:20px}
+.big-clock .time{font-size:52px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:.02em;line-height:1.1}
+.big-clock .date{font-size:16px;color:var(--gold);margin-top:8px;font-weight:600}
+.big-clock .tz{font-size:12px;color:var(--white-soft);margin-top:4px;letter-spacing:.15em}
+
+/* 테이블 */
+.table-wrap{overflow-x:auto}
+table.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
+.tbl th{text-align:left;padding:10px 12px;color:var(--ink-soft);font-weight:600;font-size:12.5px;border-bottom:2px solid var(--ceramic);white-space:nowrap}
+.tbl td{padding:11px 12px;border-bottom:1px solid #efedea;vertical-align:middle}
+.tbl tr:hover td{background:#faf9f7}
+.tbl .num{text-align:right;font-variant-numeric:tabular-nums}
+.empty{padding:36px;text-align:center;color:var(--ink-faint);font-size:14px}
+
+/* 배지 */
+.badge{display:inline-block;border-radius:50px;padding:3px 11px;font-size:11.5px;font-weight:700;white-space:nowrap}
+.bg-neutral{background:var(--ceramic);color:var(--ink-soft)}
+.bg-green{background:var(--green-light);color:var(--green-brand)}
+.bg-red{background:var(--red-tint);color:var(--red)}
+.bg-amber{background:var(--amber-tint);color:var(--amber)}
+.bg-dark{background:var(--green-house);color:#fff}
+.sig-badge{display:inline-flex;flex-direction:column;gap:1px;background:var(--green-light);border-radius:8px;padding:5px 11px;font-size:11.5px;color:var(--green-brand);line-height:1.4}
+.sig-badge b{font-size:12.5px}
+
+/* 폼 */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12.5px;font-weight:700;color:var(--ink-soft)}
+.field label .req{color:var(--red)}
+.field input,.field select,.field textarea{border:1px solid #d6dbde;border-radius:8px;padding:10px 12px;background:#fff;outline:none;
+  transition:border-color .15s ease, background .15s ease}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--green-accent);background:hsl(160 32% 87% / 20%)}
+.field.error input,.field.error select,.field.error textarea{border-color:var(--red);background:var(--red-tint)}
+.field .err-msg{font-size:12px;color:var(--red);display:none}
+.field.error .err-msg{display:block}
+.field .help{font-size:12px;color:var(--ink-faint)}
+.form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;flex-wrap:wrap}
+.filter-bar{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px}
+.filter-bar .field{min-width:150px}
+.filter-bar input,.filter-bar select{padding:8px 11px;font-size:13.5px}
+
+/* 정책 체크리스트 */
+.policy-check{display:flex;flex-direction:column;gap:5px;background:var(--cool);border-radius:8px;padding:12px 16px;font-size:12.5px;margin-top:6px}
+.policy-check .ok{color:var(--green-brand)}
+.policy-check .bad{color:var(--red)}
+
+/* 다크 밴드 */
+.band{background:var(--green-house);color:#fff;border-radius:var(--radius-card);padding:26px 28px;margin-bottom:20px;
+  display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+.band h3{font-size:18px;font-weight:700;color:#fff;margin-bottom:6px}
+.band p{color:var(--white-soft);font-size:13.5px;max-width:640px}
+
+/* 토스트 / 모달 */
+#toast-zone{position:fixed;top:18px;right:18px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--green-house);color:#fff;border-radius:10px;padding:13px 18px;font-size:13.5px;
+  box-shadow:0 4px 14px rgba(0,0,0,0.18);animation:slideIn .25s ease;max-width:380px}
+.toast.error{background:var(--red)}
+.toast.warn{background:var(--amber)}
+@keyframes slideIn{from{transform:translateX(30px);opacity:0}to{transform:translateX(0);opacity:1}}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:#fff;border-radius:var(--radius-card);box-shadow:0 12px 40px rgba(0,0,0,0.25);width:100%;max-width:480px;padding:30px;animation:popIn .2s ease}
+@keyframes popIn{from{transform:scale(.96);opacity:0}to{transform:scale(1);opacity:1}}
+.modal h3{font-size:17px;font-weight:700;color:var(--green-brand);margin-bottom:8px}
+.modal .desc{font-size:13.5px;color:var(--ink-soft);margin-bottom:18px;line-height:1.6}
+
+/* 인쇄 — 장비사용 기록서 */
+#print-area{display:none}
+@media print{
+  body *{visibility:hidden}
+  #print-area,#print-area *{visibility:visible}
+  #print-area{display:block;position:absolute;left:0;top:0;width:100%}
+  @page{margin:12mm}
+}
+.lb-sheet{background:#fff;max-width:900px;margin:0 auto;padding:24px}
+.lb-head{border-bottom:3px solid var(--green-house);padding-bottom:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-end}
+.lb-head h1{font-size:24px;font-weight:800;color:var(--green-house)}
+.lb-head .org{font-size:12px;color:var(--ink-soft);text-align:right;line-height:1.6}
+.lb-meta{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-soft);margin-bottom:18px;
+  background:var(--cool);padding:10px 16px;border-radius:8px}
+.lb-meta b{color:var(--ink);font-variant-numeric:tabular-nums}
+table.lb-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.lb-tbl th{background:var(--green-house);color:#fff;padding:8px 9px;text-align:left;font-weight:600;white-space:nowrap}
+.lb-tbl td{padding:8px 9px;border-bottom:1px solid #e2dfda;vertical-align:top}
+.lb-foot{margin-top:22px;font-size:11px;color:var(--ink-soft);border-top:1px solid var(--ceramic);padding-top:12px;line-height:1.8}
+.lb-sign-row{display:flex;gap:40px;justify-content:flex-end;margin-top:26px}
+.lb-sign-row .blk{text-align:center;font-size:12px;color:var(--ink-soft)}
+.lb-sign-row .line{width:140px;border-bottom:1px solid var(--ink-faint);height:34px;margin-bottom:5px}
+
+@media (max-width:900px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:relative;height:auto}
+  .big-clock .time{font-size:36px}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast-zone"></div>
+<div id="modal-zone"></div>
+<div id="print-area"></div>
+<script>
+(function(){
+'use strict';
+
+/* ============================================================
+   1. 상수 / 유틸
+   ============================================================ */
+var PREFIX = 'elb:';
+var APP_NAME = '전자로그북 기록 시스템';
+var APP_VER = 'v2.0';
+
+function pad(n){ return (n<10?'0':'')+n; }
+function fmtDate(d){
+  if(typeof d==='string') d=new Date(d);
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+}
+function fmtDateTime(d){
+  if(typeof d==='string') d=new Date(d);
+  return fmtDate(d)+' '+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+}
+function fmtDateTimeMin(d){
+  if(typeof d==='string') d=new Date(d);
+  return fmtDate(d)+' '+pad(d.getHours())+':'+pad(d.getMinutes());
+}
+function nowIso(){ return new Date().toISOString(); }
+function uid(prefix){ return prefix+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8); }
+function escapeHtml(s){
+  if(s===null||s===undefined) return '';
+  return String(s).replace(/[&<>"']/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+function daysBetween(fromIso, toDate){
+  return Math.floor((toDate - new Date(fromIso))/(1000*60*60*24));
+}
+function downloadFile(content, filename, mime){
+  var blob = new Blob([content], {type:mime});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+}
+
+/* ============================================================
+   2. Storage (localStorage, elb: 네임스페이스)
+   ============================================================ */
+var store = {
+  get: function(key, def){
+    try{
+      var raw = localStorage.getItem(PREFIX+key);
+      return raw===null ? def : JSON.parse(raw);
+    }catch(e){ return def; }
+  },
+  set: function(key, val){ localStorage.setItem(PREFIX+key, JSON.stringify(val)); },
+  remove: function(key){ localStorage.removeItem(PREFIX+key); }
+};
+
+/* ============================================================
+   3. 시드 데이터 — URS 14: Manager 계정 1개
+   ============================================================ */
+function seedIfEmpty(){
+  if(store.get('users', null)) return;
+  var now = nowIso();
+  store.set('users', [
+    {userId:'manager', name:'관리자', passwordPlain:'Manager1!', role:'MANAGER', active:true,
+     passwordChangedAt:now, createdAt:now, createdBy:'system'}
+  ]);
+  store.set('logRecords', []);
+  store.set('audit', []);
+  store.set('settings', {
+    autoLogoutMinutes: 15,
+    passwordPolicy: {minLength:8, requireUppercase:true, requireNumber:true, requireSpecialChar:true, changeIntervalDays:90},
+    equipmentList: ['HPLC-001','GC-001','Balance-001','UV-001','pH Meter-001'],
+    companyName: '(주)갬프제약'
+  });
+}
+
+/* ============================================================
+   4. 감사추적 — URS 9
+   ============================================================ */
+var audit = {
+  append: function(action, target, detail, userOverride){
+    var s = auth.current();
+    var list = store.get('audit', []);
+    list.push({
+      eventId: uid('aud'), timestamp: nowIso(),
+      userId: s ? s.userId : (userOverride||'-'),
+      userName: s ? s.name : '-',
+      action: action, target: target||'', detail: detail||''
+    });
+    store.set('audit', list);
+  },
+  list: function(){ return store.get('audit', []); },
+  exportCsv: function(){
+    var rows = [['일시(KST)','사용자 ID','사용자명','이벤트','대상','상세']];
+    audit.list().forEach(function(e){
+      rows.push([fmtDateTime(e.timestamp), e.userId, e.userName, e.action, e.target, e.detail||'']);
+    });
+    var csv = '﻿' + rows.map(function(r){
+      return r.map(function(c){ return '"'+String(c).replace(/"/g,'""')+'"'; }).join(',');
+    }).join('\r\n');
+    downloadFile(csv, 'elb-audit-'+fmtDate(new Date()).replace(/-/g,'')+'.csv', 'text/csv;charset=utf-8');
+    audit.append('AUDIT_EXPORT', 'audit trail CSV');
+  }
+};
+
+/* ============================================================
+   5. 패스워드 정책 — URS 12
+   ============================================================ */
+function checkPasswordPolicy(pw){
+  var policy = store.get('settings', {}).passwordPolicy || {};
+  var results = [];
+  results.push({ok: pw.length >= (policy.minLength||8), label:'최소 '+(policy.minLength||8)+'자 이상'});
+  if(policy.requireUppercase) results.push({ok:/[A-Z]/.test(pw), label:'대문자 포함'});
+  if(policy.requireNumber) results.push({ok:/[0-9]/.test(pw), label:'숫자 포함'});
+  if(policy.requireSpecialChar) results.push({ok:/[^A-Za-z0-9]/.test(pw), label:'특수문자 포함'});
+  return results;
+}
+function passwordPolicyOk(pw){
+  return checkPasswordPolicy(pw).every(function(r){ return r.ok; });
+}
+function isPasswordExpired(user){
+  var policy = store.get('settings', {}).passwordPolicy || {};
+  var interval = policy.changeIntervalDays;
+  if(interval===undefined || interval===null) return false;
+  return daysBetween(user.passwordChangedAt, new Date()) >= interval;
+}
+
+/* ============================================================
+   6. 인증 / 세션 / 자동 로그아웃 — URS 1, 11
+   ============================================================ */
+var SESSION_KEY = 'session';
+var auth = {
+  current: function(){ return store.get(SESSION_KEY, null); },
+  login: function(id, pw){
+    var users = store.get('users', []);
+    var user = users.find(function(u){ return u.userId===id && u.passwordPlain===pw && u.active; });
+    if(!user){
+      audit.append('LOGIN_FAIL', id, '로그인 실패', id);
+      return {ok:false};
+    }
+    var session = {userId:user.userId, name:user.name, role:user.role, loginAt:nowIso()};
+    store.set(SESSION_KEY, session);
+    audit.append('LOGIN', user.userId, '로그인 성공');
+    return {ok:true, expired: isPasswordExpired(user)};
+  },
+  logout: function(autoFlag){
+    var s = auth.current();
+    if(s) audit.append(autoFlag ? 'AUTO_LOGOUT' : 'LOGOUT', s.userId, autoFlag?'자동 로그아웃':'로그아웃');
+    store.remove(SESSION_KEY);
+  },
+  isManager: function(){
+    var s = auth.current();
+    return !!(s && s.role==='MANAGER');
+  },
+  changePassword: function(currentPw, newPw){
+    var s = auth.current();
+    var users = store.get('users', []);
+    var user = users.find(function(u){ return u.userId===s.userId; });
+    if(user.passwordPlain !== currentPw) throw new Error('현재 비밀번호가 일치하지 않습니다.');
+    if(!passwordPolicyOk(newPw)) throw new Error('새 비밀번호가 패스워드 정책을 충족하지 않습니다.');
+    if(newPw === currentPw) throw new Error('새 비밀번호는 현재 비밀번호와 달라야 합니다.');
+    user.passwordPlain = newPw;
+    user.passwordChangedAt = nowIso();
+    store.set('users', users);
+    audit.append('PASSWORD_CHANGE', user.userId, '비밀번호 변경');
+  }
+};
+
+var idleTimer = {
+  handle: null,
+  reset: function(){
+    if(idleTimer.handle) clearTimeout(idleTimer.handle);
+    if(!auth.current()) return;
+    var minutes = store.get('settings', {}).autoLogoutMinutes || 15;
+    idleTimer.handle = setTimeout(function(){
+      if(auth.current()){
+        auth.logout(true);
+        toast('자동 로그아웃 되었습니다. ('+minutes+'분 무활동)', 'warn');
+        location.hash = '#/login';
+        renderRoute();
+      }
+    }, minutes*60*1000);
+  },
+  bind: function(){
+    ['click','keydown','mousemove','scroll','touchstart'].forEach(function(evt){
+      document.addEventListener(evt, throttleReset, {passive:true});
+    });
+  }
+};
+var _lastReset = 0;
+function throttleReset(){
+  var t = Date.now();
+  if(t - _lastReset > 5000){ _lastReset = t; idleTimer.reset(); }
+}
+
+/* ============================================================
+   7. 로그 기록 — URS 3, 4, 5 (append-only, 갱신 함수 없음)
+   ============================================================ */
+var logbook = {
+  list: function(){ return store.get('logRecords', []); },
+  /* 작성 = 전자서명 = 확정. 수정/삭제 함수는 의도적으로 구현하지 않음 (URS 5) */
+  create: function(equipment, startTime, endTime, purpose){
+    if(!equipment || !startTime || !endTime || !purpose) throw new Error('모든 항목은 필수입니다.');
+    if(new Date(endTime) <= new Date(startTime)) throw new Error('종료 시간은 시작 시간 이후여야 합니다.');
+    var s = auth.current();
+    var rec = {
+      recordId: uid('log'),
+      equipment: equipment,
+      startTime: startTime, endTime: endTime, purpose: purpose,
+      signedBy: s.userId, signedByName: s.name,
+      signedAt: nowIso()  /* 전자서명 일시 — URS 4 */
+    };
+    var list = logbook.list();
+    list.push(rec);
+    store.set('logRecords', list);
+    audit.append('LOG_CREATE', rec.recordId, '장비: '+equipment+' / 전자서명: '+s.userId);
+    return rec;
+  }
+};
+
+/* ============================================================
+   8. UI 헬퍼 — 토스트 / 모달 / 필수값 검증
+   ============================================================ */
+function toast(msg, type){
+  var zone = document.getElementById('toast-zone');
+  var el = document.createElement('div');
+  el.className = 'toast' + (type ? ' '+type : '');
+  el.textContent = msg;
+  zone.appendChild(el);
+  setTimeout(function(){
+    el.style.transition='opacity .4s ease'; el.style.opacity='0';
+    setTimeout(function(){ el.remove(); }, 400);
+  }, 3200);
+}
+function openModal(opts){
+  var zone = document.getElementById('modal-zone');
+  zone.innerHTML =
+    '<div class="modal-backdrop"><div class="modal">'+
+    '<h3>'+escapeHtml(opts.title)+'</h3>'+
+    (opts.desc ? '<div class="desc">'+opts.desc+'</div>' : '')+
+    (opts.bodyHtml || '')+
+    '<div class="form-actions">'+
+    '<button class="btn btn-ghost" data-act="cancel">취소</button>'+
+    '<button class="btn '+(opts.danger?'btn-danger':'btn-primary')+'" data-act="ok">'+escapeHtml(opts.okText||'확인')+'</button>'+
+    '</div></div></div>';
+  var backdrop = zone.firstChild;
+  var modalEl = backdrop.firstChild;
+  function close(){ zone.innerHTML=''; }
+  backdrop.addEventListener('click', function(e){ if(e.target===backdrop) close(); });
+  modalEl.querySelector('[data-act=cancel]').addEventListener('click', close);
+  modalEl.querySelector('[data-act=ok]').addEventListener('click', function(){
+    if(opts.onOk && opts.onOk(modalEl)===false) return;
+    close();
+  });
+  var firstInput = modalEl.querySelector('input,textarea,select');
+  if(firstInput) firstInput.focus();
+  return modalEl;
+}
+function validateRequired(formEl){
+  var ok = true; var firstBad = null;
+  formEl.querySelectorAll('[data-required]').forEach(function(input){
+    var field = input.closest('.field');
+    if(!input.value || !String(input.value).trim()){
+      field.classList.add('error'); ok=false;
+      if(!firstBad) firstBad = input;
+    } else field.classList.remove('error');
+  });
+  if(firstBad){ firstBad.focus(); toast('필수 항목이 누락되었습니다.', 'error'); }
+  return ok;
+}
+
+/* ============================================================
+   9. 라우터 + 레이아웃
+   ============================================================ */
+var ROUTES = {
+  '#/login':           {view: viewLogin,          public:true},
+  '#/change-password': {view: viewChangePassword, anyRole:true},
+  '#/dashboard':       {view: viewDashboard,      anyRole:true},
+  '#/logbook/new':     {view: viewLogNew,         anyRole:true},
+  '#/history':         {view: viewHistory,        anyRole:true},
+  '#/audit':           {view: viewAudit,          managerOnly:true},
+  '#/users':           {view: viewUsers,          managerOnly:true},
+  '#/settings':        {view: viewSettings,       managerOnly:true}
+};
+var VIEW_BINDERS = {};
+
+function renderRoute(){
+  var session = auth.current();
+  var hash = (location.hash || (session ? '#/dashboard' : '#/login')).split('?')[0];
+  var route = ROUTES[hash];
+  var app = document.getElementById('app');
+  if(!route){ location.hash = session ? '#/dashboard' : '#/login'; return; }
+  if(route.public){
+    app.innerHTML = route.view();
+    if(VIEW_BINDERS[hash]) VIEW_BINDERS[hash]();
+    return;
+  }
+  if(!session){ location.hash='#/login'; return; }
+  if(route.managerOnly && !auth.isManager()){
+    toast('Manager 권한이 필요합니다.', 'error');
+    location.hash = '#/dashboard';
+    return;
+  }
+  app.innerHTML = layoutShell(route.view(), hash);
+  bindLayout();
+  if(VIEW_BINDERS[hash]) VIEW_BINDERS[hash]();
+}
+
+var NAV = [
+  {group:'업무', items:[
+    {hash:'#/dashboard',   label:'대시보드',     ico:'⌂', manager:false},
+    {hash:'#/logbook/new', label:'로그 기록 작성', ico:'✎', manager:false},
+    {hash:'#/history',     label:'이력 조회 / 출력', ico:'≡', manager:false}
+  ]},
+  {group:'시스템 (Manager)', items:[
+    {hash:'#/audit',    label:'감사추적', ico:'◉', manager:true},
+    {hash:'#/users',    label:'계정 관리', ico:'⚇', manager:true},
+    {hash:'#/settings', label:'시스템 설정', ico:'⚙', manager:true}
+  ]},
+  {group:'내 계정', items:[
+    {hash:'#/change-password', label:'비밀번호 변경', ico:'🔑', manager:false}
+  ]}
+];
+
+function layoutShell(contentHtml, activeHash){
+  var session = auth.current();
+  var isManager = auth.isManager();
+  var navHtml = '';
+  NAV.forEach(function(grp){
+    var items = grp.items.filter(function(it){ return !it.manager || isManager; });
+    if(!items.length) return;
+    navHtml += '<div class="nav-group">'+grp.group+'</div>';
+    items.forEach(function(it){
+      navHtml += '<a class="nav-item'+(activeHash===it.hash?' active':'')+'" href="'+it.hash+'"><span class="ico">'+it.ico+'</span>'+it.label+'</a>';
+    });
+  });
+  var roleName = session.role==='MANAGER' ? 'Manager' : 'Operator';
+  return ''+
+  '<div class="app">'+
+    '<aside class="sidebar">'+
+      '<div class="side-logo"><div class="t1">'+APP_NAME+'</div><div class="t2">Electronic Logbook · 장비 사용기록 전자화</div></div>'+
+      '<nav class="side-nav">'+navHtml+'</nav>'+
+      '<div class="side-foot">CSV 실습용 교육 시스템 '+APP_VER+'<br>GAMP Category 5 (Custom)<br>'+escapeHtml(store.get('settings',{}).companyName||'')+'</div>'+
+    '</aside>'+
+    '<div class="main">'+
+      '<header class="topbar">'+
+        '<div class="clock" id="topbar-clock">'+fmtDateTime(new Date())+' KST</div>'+
+        '<div class="right">'+
+          '<span class="who"><b>'+escapeHtml(session.name)+'</b> ('+escapeHtml(session.userId)+')<span class="role-chip">'+roleName+'</span></span>'+
+          '<button class="btn btn-ghost btn-sm" id="btn-logout">로그아웃</button>'+
+        '</div>'+
+      '</header>'+
+      '<main class="content">'+contentHtml+'</main>'+
+    '</div>'+
+  '</div>';
+}
+var clockHandle = null;
+function bindLayout(){
+  var btn = document.getElementById('btn-logout');
+  if(btn) btn.addEventListener('click', function(){
+    auth.logout(false);
+    location.hash='#/login';
+    renderRoute();
+  });
+  if(clockHandle) clearInterval(clockHandle);
+  /* URS 16: KST 실시간 시계 (상단바 + 대시보드 대형 시계) */
+  clockHandle = setInterval(function(){
+    var now = new Date();
+    var el = document.getElementById('topbar-clock');
+    if(el) el.textContent = fmtDateTime(now)+' KST';
+    var big = document.getElementById('big-clock-time');
+    if(big){
+      big.textContent = pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
+      var bigDate = document.getElementById('big-clock-date');
+      if(bigDate) bigDate.textContent = fmtDate(now)+' ('+['일','월','화','수','목','금','토'][now.getDay()]+')';
+    }
+    var loginClock = document.getElementById('login-clock');
+    if(loginClock) loginClock.textContent = fmtDateTime(now)+' KST';
+  }, 1000);
+  idleTimer.reset();
+}
+
+/* ============================================================
+   10. 화면 — 로그인 (URS 1) + 비밀번호 만료 검사 (URS 12)
+   ============================================================ */
+function viewLogin(){
+  return ''+
+  '<div class="login-page">'+
+    '<div class="login-band">'+
+      '<h1>'+APP_NAME+'</h1>'+
+      '<p>장비 사용기록 전자화 · 전자서명 · 감사추적 — CSV 실습용 시스템</p>'+
+      '<div class="clock" id="login-clock">'+fmtDateTime(new Date())+' KST</div>'+
+    '</div>'+
+    '<div class="login-wrap"><div class="login-card">'+
+      '<h2>로그인</h2>'+
+      '<form id="login-form">'+
+        '<div class="field" style="margin-bottom:14px"><label>사용자 ID <span class="req">*</span></label>'+
+          '<input id="login-id" data-required autocomplete="off"><div class="err-msg">ID를 입력하세요.</div></div>'+
+        '<div class="field" style="margin-bottom:22px"><label>비밀번호 <span class="req">*</span></label>'+
+          '<input type="password" id="login-pw" data-required autocomplete="off"><div class="err-msg">비밀번호를 입력하세요.</div></div>'+
+        '<button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:12px">로그인</button>'+
+      '</form>'+
+      '<div class="login-hint"><b>실습용 시드 계정</b><br>Manager: <b>manager / Manager1!</b><br>'+
+      'Operator 계정은 Manager가 계정 관리에서 생성합니다. (URS 14)</div>'+
+    '</div></div>'+
+  '</div>';
+}
+VIEW_BINDERS['#/login'] = function(){
+  /* 로그인 화면에서도 시계 동작 */
+  if(clockHandle) clearInterval(clockHandle);
+  clockHandle = setInterval(function(){
+    var el = document.getElementById('login-clock');
+    if(el) el.textContent = fmtDateTime(new Date())+' KST';
+  }, 1000);
+  var form = document.getElementById('login-form');
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    if(!validateRequired(form)) return;
+    var result = auth.login(
+      document.getElementById('login-id').value.trim(),
+      document.getElementById('login-pw').value);
+    if(!result.ok){ toast('ID 또는 비밀번호가 올바르지 않습니다.', 'error'); return; }
+    if(result.expired){
+      toast('비밀번호 변경 주기가 경과했습니다. 비밀번호를 변경하세요.', 'warn');
+      location.hash = '#/change-password';
+    } else {
+      toast(auth.current().name+'님, 환영합니다.');
+      location.hash = '#/dashboard';
+    }
+    renderRoute();
+  });
+};
+
+/* ============================================================
+   11. 화면 — 비밀번호 변경 (URS 12)
+   ============================================================ */
+function viewChangePassword(){
+  var policy = store.get('settings',{}).passwordPolicy||{};
+  var policyDesc = '최소 '+policy.minLength+'자'+
+    (policy.requireUppercase?', 대문자':'')+(policy.requireNumber?', 숫자':'')+
+    (policy.requireSpecialChar?', 특수문자':'')+' 포함 / 변경 주기 '+policy.changeIntervalDays+'일';
+  return ''+
+  '<div class="page-head"><div><h2>비밀번호 변경</h2><div class="sub">현재 패스워드 정책: '+escapeHtml(policyDesc)+'</div></div></div>'+
+  '<div class="card" style="max-width:520px">'+
+    '<form id="pw-form">'+
+      '<div class="field" style="margin-bottom:14px"><label>현재 비밀번호 <span class="req">*</span></label>'+
+        '<input type="password" id="pw-current" data-required autocomplete="off"><div class="err-msg">현재 비밀번호를 입력하세요.</div></div>'+
+      '<div class="field" style="margin-bottom:6px"><label>새 비밀번호 <span class="req">*</span></label>'+
+        '<input type="password" id="pw-new" data-required autocomplete="new-password"><div class="err-msg">새 비밀번호를 입력하세요.</div></div>'+
+      '<div class="policy-check" id="pw-policy-check"></div>'+
+      '<div class="field" style="margin:14px 0"><label>새 비밀번호 확인 <span class="req">*</span></label>'+
+        '<input type="password" id="pw-confirm" data-required autocomplete="new-password"><div class="err-msg">확인 비밀번호를 입력하세요.</div></div>'+
+      '<div class="form-actions"><button type="submit" class="btn btn-primary">비밀번호 변경</button></div>'+
+    '</form>'+
+  '</div>';
+}
+VIEW_BINDERS['#/change-password'] = function(){
+  var newInput = document.getElementById('pw-new');
+  var checkBox = document.getElementById('pw-policy-check');
+  function renderPolicy(){
+    var results = checkPasswordPolicy(newInput.value);
+    checkBox.innerHTML = results.map(function(r){
+      return '<span class="'+(r.ok?'ok':'bad')+'">'+(r.ok?'✓':'✗')+' '+r.label+'</span>';
+    }).join('');
+  }
+  renderPolicy();
+  newInput.addEventListener('input', renderPolicy);
+  var form = document.getElementById('pw-form');
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    if(!validateRequired(form)) return;
+    var cur = document.getElementById('pw-current').value;
+    var nw = newInput.value;
+    var confirm = document.getElementById('pw-confirm').value;
+    if(nw !== confirm){ toast('새 비밀번호와 확인이 일치하지 않습니다.', 'error'); return; }
+    try{
+      auth.changePassword(cur, nw);
+      toast('비밀번호가 변경되었습니다.');
+      location.hash = '#/dashboard';
+      renderRoute();
+    }catch(err){ toast(err.message, 'error'); }
+  });
+};
+
+/* ============================================================
+   12. 화면 — 대시보드 (URS 16: 대형 KST 시계)
+   ============================================================ */
+function viewDashboard(){
+  var logs = logbook.list();
+  var today = fmtDate(new Date());
+  var todayLogs = logs.filter(function(r){ return fmtDate(r.signedAt)===today; });
+  var myLogs = logs.filter(function(r){ return r.signedBy===auth.current().userId; });
+  var equipCount = store.get('settings',{}).equipmentList.length;
+  var now = new Date();
+  var recent = logs.slice().sort(function(a,b){ return b.signedAt.localeCompare(a.signedAt); }).slice(0,8);
+  var rows = recent.map(function(r){
+    return '<tr>'+
+      '<td style="font-weight:600">'+escapeHtml(r.equipment)+'</td>'+
+      '<td>'+fmtDateTimeMin(r.startTime)+' ~ '+fmtDateTimeMin(r.endTime)+'</td>'+
+      '<td>'+escapeHtml(r.purpose)+'</td>'+
+      '<td><div class="sig-badge"><b>'+escapeHtml(r.signedByName)+' ('+escapeHtml(r.signedBy)+')</b>'+fmtDateTime(r.signedAt)+'</div></td>'+
+    '</tr>';
+  }).join('');
+
+  return ''+
+  '<div class="page-head"><div><h2>대시보드</h2><div class="sub">전자로그북 현황 요약</div></div>'+
+  '<a class="btn btn-primary" href="#/logbook/new">+ 로그 기록 작성</a></div>'+
+  '<div class="big-clock">'+
+    '<div class="time" id="big-clock-time">'+pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds())+'</div>'+
+    '<div class="date" id="big-clock-date">'+fmtDate(now)+' ('+['일','월','화','수','목','금','토'][now.getDay()]+')</div>'+
+    '<div class="tz">KOREA STANDARD TIME (KST, UTC+9)</div>'+
+  '</div>'+
+  '<div class="stat-grid">'+
+    '<div class="stat-card"><div class="label">전체 사용 기록</div><div class="value">'+logs.length+'</div><div class="foot">append-only, 수정·삭제 불가</div></div>'+
+    '<div class="stat-card"><div class="label">오늘 기록</div><div class="value">'+todayLogs.length+'</div><div class="foot">'+today+'</div></div>'+
+    '<div class="stat-card"><div class="label">내가 서명한 기록</div><div class="value">'+myLogs.length+'</div><div class="foot">'+escapeHtml(auth.current().name)+'</div></div>'+
+    '<div class="stat-card dark"><div class="label">등록 장비</div><div class="value">'+equipCount+'</div><div class="foot">직접 입력도 가능</div></div>'+
+  '</div>'+
+  '<div class="card"><h3>최근 사용 기록</h3>'+
+    (recent.length
+      ? '<div class="table-wrap"><table class="tbl"><thead><tr><th>장비</th><th>사용 시간</th><th>사용 목적</th><th>전자서명</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+      : '<div class="empty">아직 사용 기록이 없습니다.</div>')+
+  '</div>';
+}
+
+/* ============================================================
+   13. 화면 — 로그 기록 작성 (URS 2, 3, 4, 5)
+   ============================================================ */
+function viewLogNew(){
+  var equipment = store.get('settings',{}).equipmentList||[];
+  var opts = equipment.map(function(e){ return '<option value="'+escapeHtml(e)+'">'+escapeHtml(e)+'</option>'; }).join('');
+  return ''+
+  '<div class="page-head"><div><h2>로그 기록 작성</h2><div class="sub">저장과 동시에 전자서명이 부여되며, 이후 수정·삭제할 수 없습니다.</div></div></div>'+
+  '<div class="card">'+
+    '<form id="log-form"><div class="form-grid">'+
+      '<div class="field"><label>장비 선택 <span class="req">*</span></label>'+
+        '<select id="l-equipment"><option value="">— 등록 장비 선택 —</option>'+opts+'<option value="__direct__">✎ 직접 입력</option></select>'+
+        '<div class="err-msg">장비를 선택하거나 입력하세요.</div></div>'+
+      '<div class="field" id="direct-field" style="display:none"><label>장비명 직접 입력 <span class="req">*</span></label>'+
+        '<input id="l-equipment-direct" placeholder="예: Karl Fischer-002"></div>'+
+      '<div class="field"><label>작업 시작 시간 <span class="req">*</span></label>'+
+        '<input type="datetime-local" id="l-start" data-required><div class="err-msg">시작 시간을 입력하세요.</div></div>'+
+      '<div class="field"><label>작업 종료 시간 <span class="req">*</span></label>'+
+        '<input type="datetime-local" id="l-end" data-required><div class="err-msg">종료 시간을 입력하세요.</div></div>'+
+      '<div class="field" style="grid-column:1/-1"><label>장비 사용 목적 <span class="req">*</span></label>'+
+        '<textarea id="l-purpose" rows="2" data-required placeholder="예: 원료의약품 함량 시험 (Lot A2026-015)"></textarea>'+
+        '<div class="err-msg">사용 목적을 입력하세요.</div></div>'+
+    '</div>'+
+    '<div class="form-actions">'+
+      '<button type="submit" class="btn btn-primary">저장 및 전자서명</button>'+
+    '</div></form>'+
+  '</div>'+
+  '<div class="card" style="background:var(--gold-lightest)"><h3 style="color:#8a6d2f">⚐ 전자서명 안내 (URS 4, 5)</h3>'+
+  '<p style="font-size:13.5px;color:var(--ink-soft);line-height:1.8">저장 버튼을 누르면 현재 로그인 사용자(<b>'+escapeHtml(auth.current().name)+'</b>)의 ID와 현재 일시(KST)가 전자서명으로 기록에 영구 부여됩니다.<br>'+
+  '저장된 기록은 <b>수정·삭제할 수 없습니다</b>. 잘못 입력한 경우 새 기록을 작성하고 사용 목적란에 정정 사유를 기재하세요. (SOP 절차)</p></div>';
+}
+VIEW_BINDERS['#/logbook/new'] = function(){
+  var select = document.getElementById('l-equipment');
+  var directField = document.getElementById('direct-field');
+  select.addEventListener('change', function(){
+    directField.style.display = select.value==='__direct__' ? 'flex' : 'none';
+  });
+  var form = document.getElementById('log-form');
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    /* 장비 검증 (select 또는 직접 입력) — URS 2 */
+    var equipment = select.value;
+    if(equipment==='__direct__') equipment = document.getElementById('l-equipment-direct').value.trim();
+    if(!equipment){
+      select.closest('.field').classList.add('error');
+      toast('장비를 선택하거나 입력하세요.', 'error');
+      return;
+    }
+    select.closest('.field').classList.remove('error');
+    if(!validateRequired(form)) return;
+    try{
+      var rec = logbook.create(
+        equipment,
+        document.getElementById('l-start').value,
+        document.getElementById('l-end').value,
+        document.getElementById('l-purpose').value.trim());
+      toast('기록이 저장되고 전자서명되었습니다. ('+rec.signedBy+', '+fmtDateTime(rec.signedAt)+')');
+      location.hash = '#/history';
+      renderRoute();
+    }catch(err){ toast(err.message, 'error'); }
+  });
+};
+
+/* ============================================================
+   14. 화면 — 이력 조회 / 필터 / 기록서 출력 (URS 6, 7, 8, 15)
+   ============================================================ */
+function historyFilters(){
+  return {
+    equipment: (document.getElementById('h-equipment')||{}).value || '',
+    dateFrom: (document.getElementById('h-from')||{}).value || '',
+    dateTo: (document.getElementById('h-to')||{}).value || '',
+    signer: ((document.getElementById('h-signer')||{}).value || '').toLowerCase()
+  };
+}
+function filteredLogs(){
+  var f = historyFilters();
+  return logbook.list().filter(function(r){
+    if(f.equipment && r.equipment !== f.equipment) return false;
+    if(f.dateFrom && fmtDate(r.startTime) < f.dateFrom) return false;
+    if(f.dateTo && fmtDate(r.startTime) > f.dateTo) return false;
+    if(f.signer && (r.signedBy+r.signedByName).toLowerCase().indexOf(f.signer)<0) return false;
+    return true;
+  }).sort(function(a,b){ return b.signedAt.localeCompare(a.signedAt); });
+}
+function historyRow(r){
+  return '<tr>'+
+    '<td style="font-weight:600">'+escapeHtml(r.equipment)+'</td>'+
+    '<td style="font-variant-numeric:tabular-nums">'+fmtDateTimeMin(r.startTime)+'<br>~ '+fmtDateTimeMin(r.endTime)+'</td>'+
+    '<td>'+escapeHtml(r.purpose)+'</td>'+
+    '<td><div class="sig-badge"><b>'+escapeHtml(r.signedByName)+' ('+escapeHtml(r.signedBy)+')</b>'+fmtDateTime(r.signedAt)+'</div></td>'+
+    '<td><span class="badge bg-green">확정 (불변)</span></td>'+
+  '</tr>';
+}
+function viewHistory(){
+  var equipment = store.get('settings',{}).equipmentList||[];
+  /* 기록에 등장한 장비(직접 입력 포함)도 필터 목록에 표시 */
+  var usedEquipment = {};
+  logbook.list().forEach(function(r){ usedEquipment[r.equipment]=true; });
+  var allEquipment = Object.keys(usedEquipment);
+  equipment.forEach(function(e){ if(!usedEquipment[e]) allEquipment.push(e); });
+  var opts = allEquipment.sort().map(function(e){ return '<option value="'+escapeHtml(e)+'">'+escapeHtml(e)+'</option>'; }).join('');
+  var logs = logbook.list().sort(function(a,b){ return b.signedAt.localeCompare(a.signedAt); });
+
+  return ''+
+  '<div class="page-head"><div><h2>이력 조회 / 출력</h2><div class="sub">전자로그북 이력을 필터링하고 장비사용 기록서를 출력합니다. 모든 기록은 읽기 전용입니다.</div></div>'+
+  '<button class="btn btn-primary" id="btn-print-logbook">장비사용 기록서 출력 (PDF)</button></div>'+
+  '<div class="card">'+
+    '<div class="filter-bar">'+
+      '<div class="field"><label>장비</label><select id="h-equipment"><option value="">전체</option>'+opts+'</select></div>'+
+      '<div class="field"><label>시작일 (부터)</label><input type="date" id="h-from"></div>'+
+      '<div class="field"><label>시작일 (까지)</label><input type="date" id="h-to"></div>'+
+      '<div class="field"><label>작성자</label><input id="h-signer" placeholder="ID 또는 이름"></div>'+
+      '<button class="btn btn-ghost btn-sm" id="h-clear">필터 초기화</button>'+
+    '</div>'+
+    '<div class="table-wrap"><table class="tbl">'+
+    '<thead><tr><th>장비</th><th>사용 시간</th><th>사용 목적</th><th>전자서명</th><th>상태</th></tr></thead>'+
+    '<tbody id="history-tbody">'+
+    (logs.length ? logs.map(historyRow).join('') : '<tr><td colspan="5" class="empty">기록이 없습니다.</td></tr>')+
+    '</tbody></table></div>'+
+    '<div style="margin-top:12px;font-size:12px;color:var(--ink-faint)" id="history-count">총 '+logs.length+'건</div>'+
+  '</div>';
+}
+VIEW_BINDERS['#/history'] = function(){
+  function applyFilter(){
+    var logs = filteredLogs();
+    document.getElementById('history-tbody').innerHTML =
+      logs.length ? logs.map(historyRow).join('') : '<tr><td colspan="5" class="empty">조건에 맞는 기록이 없습니다.</td></tr>';
+    document.getElementById('history-count').textContent = '총 '+logs.length+'건';
+  }
+  ['h-equipment','h-from','h-to','h-signer'].forEach(function(id){
+    var el = document.getElementById(id);
+    el.addEventListener(el.tagName==='SELECT'||el.type==='date'?'change':'input', applyFilter);
+  });
+  document.getElementById('h-clear').addEventListener('click', function(){
+    ['h-equipment','h-from','h-to','h-signer'].forEach(function(id){ document.getElementById(id).value=''; });
+    applyFilter();
+  });
+  document.getElementById('btn-print-logbook').addEventListener('click', function(){
+    printLogbook(filteredLogs());
+  });
+};
+
+/* 장비사용 기록서 인쇄 — URS 6, 7 (출력시간 YYYY-MM-DD HH:MM:SS) */
+function printLogbook(logs){
+  if(!logs.length){ toast('출력할 기록이 없습니다.', 'error'); return; }
+  var settings = store.get('settings', {});
+  var s = auth.current();
+  var f = historyFilters();
+  var filterDesc = [];
+  if(f.equipment) filterDesc.push('장비: '+f.equipment);
+  if(f.dateFrom || f.dateTo) filterDesc.push('기간: '+(f.dateFrom||'~')+' ~ '+(f.dateTo||'~'));
+  if(f.signer) filterDesc.push('작성자: '+f.signer);
+  var rows = logs.slice().reverse().map(function(r, i){
+    return '<tr>'+
+      '<td>'+(i+1)+'</td>'+
+      '<td>'+escapeHtml(r.equipment)+'</td>'+
+      '<td>'+fmtDateTimeMin(r.startTime)+'</td>'+
+      '<td>'+fmtDateTimeMin(r.endTime)+'</td>'+
+      '<td>'+escapeHtml(r.purpose)+'</td>'+
+      '<td>'+escapeHtml(r.signedByName)+'<br>('+escapeHtml(r.signedBy)+')</td>'+
+      '<td>'+fmtDateTime(r.signedAt)+'</td>'+
+    '</tr>';
+  }).join('');
+  var area = document.getElementById('print-area');
+  area.innerHTML = ''+
+  '<div class="lb-sheet">'+
+    '<div class="lb-head"><h1>장비사용 기록서</h1>'+
+    '<div class="org">'+escapeHtml(settings.companyName||'')+'<br>Equipment Usage Logbook</div></div>'+
+    /* URS 7: 출력시간 YYYY-MM-DD HH:MM:SS */
+    '<div class="lb-meta">'+
+      '<span>출력시간: <b>'+fmtDateTime(new Date())+'</b></span>'+
+      '<span>출력자: <b>'+escapeHtml(s.name)+' ('+escapeHtml(s.userId)+')</b></span>'+
+      '<span>출력 건수: <b>'+logs.length+'건</b></span>'+
+      (filterDesc.length?'<span>필터: <b>'+escapeHtml(filterDesc.join(' / '))+'</b></span>':'')+
+    '</div>'+
+    '<table class="lb-tbl"><thead><tr>'+
+    '<th>#</th><th>장비</th><th>시작 시간</th><th>종료 시간</th><th>사용 목적</th><th>서명자</th><th>전자서명 일시</th>'+
+    '</tr></thead><tbody>'+rows+'</tbody></table>'+
+    '<div class="lb-sign-row">'+
+      '<div class="blk"><div class="line"></div>검토자 (Reviewed by)</div>'+
+      '<div class="blk"><div class="line"></div>승인자 (Approved by)</div>'+
+    '</div>'+
+    '<div class="lb-foot">본 기록서는 '+APP_NAME+' '+APP_VER+'에서 출력되었습니다. '+
+    '모든 기록은 작성 시점에 전자서명되었으며, 시스템에서 수정·삭제가 불가능합니다 (append-only).<br>'+
+    '감사추적(Audit Trail)을 통해 모든 기록의 작성 이력을 확인할 수 있습니다.</div>'+
+  '</div>';
+  audit.append('LOGBOOK_PRINT', logs.length+'건 출력', filterDesc.join(' / ')||'전체');
+  setTimeout(function(){ window.print(); }, 100);
+}
+
+/* ============================================================
+   15. 화면 — 감사추적 (URS 9, Manager 전용)
+   ============================================================ */
+var ACTION_LABELS = {
+  LOGIN:'로그인', LOGIN_FAIL:'로그인 실패', LOGOUT:'로그아웃', AUTO_LOGOUT:'자동 로그아웃',
+  LOG_CREATE:'로그 작성 (전자서명)', LOGBOOK_PRINT:'기록서 출력',
+  USER_CREATE:'계정 생성', USER_DEACTIVATE:'계정 비활성화', PASSWORD_CHANGE:'비밀번호 변경',
+  POLICY_UPDATE:'패스워드 정책 변경', EQUIPMENT_ADD:'장비 추가', EQUIPMENT_REMOVE:'장비 삭제',
+  SETTINGS_UPDATE:'설정 변경', AUDIT_EXPORT:'감사추적 내보내기'
+};
+function auditRow(e){
+  return '<tr>'+
+    '<td style="white-space:nowrap;font-variant-numeric:tabular-nums">'+fmtDateTime(e.timestamp)+'</td>'+
+    '<td>'+escapeHtml(e.userId)+'<br><span style="color:var(--ink-faint);font-size:11.5px">'+escapeHtml(e.userName||'')+'</span></td>'+
+    '<td><span class="badge bg-neutral">'+escapeHtml(ACTION_LABELS[e.action]||e.action)+'</span></td>'+
+    '<td>'+escapeHtml(e.target)+'</td>'+
+    '<td style="font-size:12px;color:var(--ink-soft)">'+escapeHtml(e.detail||'')+'</td>'+
+  '</tr>';
+}
+function viewAudit(){
+  var list = audit.list().slice().reverse();
+  var actions = Object.keys(ACTION_LABELS).map(function(a){
+    return '<option value="'+a+'">'+ACTION_LABELS[a]+'</option>';
+  }).join('');
+  return ''+
+  '<div class="page-head"><div><h2>감사추적 (Audit Trail)</h2>'+
+  '<div class="sub">로그인/로그아웃 이력과 로그북 작성 이력이 기록됩니다. 수정·삭제할 수 없습니다.</div></div>'+
+  '<button class="btn btn-outline" id="btn-audit-csv">CSV 내보내기</button></div>'+
+  '<div class="card">'+
+    '<div class="filter-bar">'+
+      '<div class="field"><label>일자</label><input type="date" id="a-date"></div>'+
+      '<div class="field"><label>사용자 ID</label><input id="a-user" placeholder="전체"></div>'+
+      '<div class="field"><label>이벤트</label><select id="a-action"><option value="">전체</option>'+actions+'</select></div>'+
+      '<button class="btn btn-ghost btn-sm" id="a-clear">필터 초기화</button>'+
+    '</div>'+
+    '<div class="table-wrap"><table class="tbl">'+
+    '<thead><tr><th>일시 (KST)</th><th>사용자</th><th>이벤트</th><th>대상</th><th>상세</th></tr></thead>'+
+    '<tbody id="audit-tbody">'+(list.length?list.map(auditRow).join(''):'<tr><td colspan="5" class="empty">기록이 없습니다.</td></tr>')+'</tbody></table></div>'+
+    '<div style="margin-top:12px;font-size:12px;color:var(--ink-faint)">총 '+list.length+'건</div>'+
+  '</div>';
+}
+VIEW_BINDERS['#/audit'] = function(){
+  document.getElementById('btn-audit-csv').addEventListener('click', function(){
+    audit.exportCsv();
+    toast('감사추적 CSV 파일이 다운로드되었습니다.');
+  });
+  function applyFilter(){
+    var date = document.getElementById('a-date').value;
+    var user = (document.getElementById('a-user').value||'').toLowerCase();
+    var action = document.getElementById('a-action').value;
+    var list = audit.list().slice().reverse().filter(function(e){
+      if(date && fmtDate(e.timestamp)!==date) return false;
+      if(user && e.userId.toLowerCase().indexOf(user)<0) return false;
+      if(action && e.action!==action) return false;
+      return true;
+    });
+    document.getElementById('audit-tbody').innerHTML =
+      list.length ? list.map(auditRow).join('') : '<tr><td colspan="5" class="empty">조건에 맞는 기록이 없습니다.</td></tr>';
+  }
+  ['a-date','a-user','a-action'].forEach(function(id){
+    var el = document.getElementById(id);
+    el.addEventListener(el.tagName==='SELECT'||el.type==='date'?'change':'input', applyFilter);
+  });
+  document.getElementById('a-clear').addEventListener('click', function(){
+    ['a-date','a-user','a-action'].forEach(function(id){ document.getElementById(id).value=''; });
+    applyFilter();
+  });
+};
+
+/* ============================================================
+   16. 화면 — 계정 관리 (URS 13, 14: Manager가 Operator 생성)
+   ============================================================ */
+function viewUsers(){
+  var policy = store.get('settings',{}).passwordPolicy||{};
+  var rows = store.get('users',[]).map(function(u){
+    var expired = isPasswordExpired(u);
+    return '<tr>'+
+      '<td style="font-weight:600">'+escapeHtml(u.userId)+'</td>'+
+      '<td>'+escapeHtml(u.name)+'</td>'+
+      '<td><span class="role-chip">'+(u.role==='MANAGER'?'Manager':'Operator')+'</span></td>'+
+      '<td>'+(u.active?'<span class="badge bg-green">활성</span>':'<span class="badge bg-neutral">비활성</span>')+
+        (expired?' <span class="badge bg-amber">비밀번호 만료</span>':'')+'</td>'+
+      '<td style="font-size:12.5px;color:var(--ink-soft)">'+fmtDate(u.passwordChangedAt)+'</td>'+
+      '<td class="actions" style="text-align:right">'+
+        (u.userId !== auth.current().userId
+          ? '<button class="btn btn-outline btn-sm" data-toggle-user="'+u.userId+'">'+(u.active?'비활성화':'활성화')+'</button>'
+          : '<span style="font-size:12px;color:var(--ink-faint)">본인 계정</span>')+
+      '</td>'+
+    '</tr>';
+  }).join('');
+  var policyDesc = '최소 '+policy.minLength+'자'+
+    (policy.requireUppercase?', 대문자':'')+(policy.requireNumber?', 숫자':'')+
+    (policy.requireSpecialChar?', 특수문자':'')+' 포함';
+
+  return ''+
+  '<div class="page-head"><div><h2>계정 관리</h2><div class="sub">Manager는 Operator 계정을 생성할 수 있습니다. (URS 13, 14)</div></div></div>'+
+  '<div class="card"><h3>신규 계정 생성</h3>'+
+    '<form id="user-form"><div class="form-grid">'+
+      '<div class="field"><label>사용자 ID <span class="req">*</span></label><input id="u-id" data-required autocomplete="off"><div class="err-msg">ID를 입력하세요.</div></div>'+
+      '<div class="field"><label>이름 <span class="req">*</span></label><input id="u-name" data-required><div class="err-msg">이름을 입력하세요.</div></div>'+
+      '<div class="field"><label>권한 <span class="req">*</span></label>'+
+        '<select id="u-role" data-required><option value="OPERATOR">Operator (작업자)</option><option value="MANAGER">Manager (관리자)</option></select></div>'+
+      '<div class="field"><label>비밀번호 <span class="req">*</span></label>'+
+        '<input type="password" id="u-pw" data-required autocomplete="new-password">'+
+        '<div class="err-msg">비밀번호를 입력하세요.</div>'+
+        '<div class="help">정책: '+escapeHtml(policyDesc)+'</div></div>'+
+    '</div>'+
+    '<div class="policy-check" id="u-policy-check"></div>'+
+    '<div class="form-actions"><button type="submit" class="btn btn-primary">계정 생성</button></div></form>'+
+  '</div>'+
+  '<div class="card"><h3>계정 목록</h3>'+
+    '<div class="table-wrap"><table class="tbl">'+
+    '<thead><tr><th>ID</th><th>이름</th><th>권한</th><th>상태</th><th>비밀번호 변경일</th><th></th></tr></thead>'+
+    '<tbody>'+rows+'</tbody></table></div>'+
+  '</div>';
+}
+VIEW_BINDERS['#/users'] = function(){
+  var pwInput = document.getElementById('u-pw');
+  var checkBox = document.getElementById('u-policy-check');
+  function renderPolicy(){
+    checkBox.innerHTML = checkPasswordPolicy(pwInput.value).map(function(r){
+      return '<span class="'+(r.ok?'ok':'bad')+'">'+(r.ok?'✓':'✗')+' '+r.label+'</span>';
+    }).join('');
+  }
+  renderPolicy();
+  pwInput.addEventListener('input', renderPolicy);
+  var form = document.getElementById('user-form');
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    if(!validateRequired(form)) return;
+    var id = document.getElementById('u-id').value.trim();
+    var pw = pwInput.value;
+    /* 패스워드 정책 강제 — URS 12 */
+    if(!passwordPolicyOk(pw)){
+      toast('비밀번호가 패스워드 정책을 충족하지 않습니다.', 'error');
+      pwInput.closest('.field').classList.add('error');
+      return;
+    }
+    var users = store.get('users',[]);
+    if(users.some(function(u){ return u.userId===id; })){ toast('이미 존재하는 ID입니다.', 'error'); return; }
+    var s = auth.current();
+    users.push({
+      userId:id, name:document.getElementById('u-name').value.trim(),
+      passwordPlain:pw, role:document.getElementById('u-role').value, active:true,
+      passwordChangedAt:nowIso(), createdAt:nowIso(), createdBy:s.userId
+    });
+    store.set('users', users);
+    audit.append('USER_CREATE', id, '권한: '+document.getElementById('u-role').value);
+    toast('계정이 생성되었습니다: '+id);
+    renderRoute();
+  });
+  document.querySelectorAll('[data-toggle-user]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var users = store.get('users',[]);
+      var u = users.find(function(x){ return x.userId===btn.getAttribute('data-toggle-user'); });
+      u.active = !u.active;
+      store.set('users', users);
+      audit.append(u.active?'USER_CREATE':'USER_DEACTIVATE', u.userId, u.active?'계정 활성화':'계정 비활성화');
+      toast(u.userId+' 계정이 '+(u.active?'활성화':'비활성화')+'되었습니다.');
+      renderRoute();
+    });
+  });
+};
+
+/* ============================================================
+   17. 화면 — 시스템 설정 (URS 2, 11, 12)
+   ============================================================ */
+function viewSettings(){
+  var s = store.get('settings', {});
+  var policy = s.passwordPolicy || {};
+  var equipRows = (s.equipmentList||[]).map(function(eq, i){
+    return '<tr><td style="font-weight:600">'+escapeHtml(eq)+'</td>'+
+      '<td class="actions" style="text-align:right"><button class="btn btn-danger btn-sm" data-remove-equip="'+i+'">삭제</button></td></tr>';
+  }).join('');
+
+  return ''+
+  '<div class="page-head"><div><h2>시스템 설정</h2><div class="sub">자동 로그아웃, 패스워드 정책, 장비 목록을 관리합니다.</div></div></div>'+
+  '<div class="card"><h3>자동 로그아웃 (URS 11)</h3>'+
+    '<form id="logout-form"><div class="form-grid">'+
+      '<div class="field"><label>자동 로그아웃 시간 (분) <span class="req">*</span></label>'+
+        '<input type="number" id="s-logout" min="1" max="480" data-required value="'+(s.autoLogoutMinutes||15)+'">'+
+        '<div class="err-msg">시간을 입력하세요.</div></div>'+
+      '<div class="field"><label>회사명 (출력물 표기)</label><input id="s-company" value="'+escapeHtml(s.companyName||'')+'"></div>'+
+    '</div>'+
+    '<div class="form-actions"><button type="submit" class="btn btn-primary">저장</button></div></form>'+
+  '</div>'+
+  '<div class="card"><h3>패스워드 정책 (URS 12)</h3>'+
+    '<form id="policy-form"><div class="form-grid">'+
+      '<div class="field"><label>최소 길이 <span class="req">*</span></label>'+
+        '<input type="number" id="p-minlen" min="4" max="32" data-required value="'+(policy.minLength||8)+'"><div class="err-msg">길이를 입력하세요.</div></div>'+
+      '<div class="field"><label>변경 주기 (일) <span class="req">*</span></label>'+
+        '<input type="number" id="p-interval" min="0" max="365" data-required value="'+(policy.changeIntervalDays!==undefined?policy.changeIntervalDays:90)+'">'+
+        '<div class="err-msg">주기를 입력하세요.</div><div class="help">0 = 다음 로그인 시 즉시 변경 요구</div></div>'+
+      '<div class="field"><label>복잡성 요건</label>'+
+        '<div style="display:flex;flex-direction:column;gap:8px;padding:8px 2px">'+
+          '<label style="font-weight:400;font-size:14px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="p-upper" '+(policy.requireUppercase?'checked':'')+'>대문자 포함 필수</label>'+
+          '<label style="font-weight:400;font-size:14px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="p-number" '+(policy.requireNumber?'checked':'')+'>숫자 포함 필수</label>'+
+          '<label style="font-weight:400;font-size:14px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="p-special" '+(policy.requireSpecialChar?'checked':'')+'>특수문자 포함 필수</label>'+
+        '</div></div>'+
+    '</div>'+
+    '<div class="form-actions"><button type="submit" class="btn btn-primary">정책 저장</button></div></form>'+
+  '</div>'+
+  '<div class="card"><h3>장비 목록 관리 (URS 2)</h3>'+
+    '<form id="equip-form" style="display:flex;gap:10px;align-items:flex-end;margin-bottom:16px">'+
+      '<div class="field" style="flex:1"><label>신규 장비명</label><input id="eq-name" placeholder="예: Karl Fischer-002"></div>'+
+      '<button type="submit" class="btn btn-outline">장비 추가</button>'+
+    '</form>'+
+    '<div class="table-wrap"><table class="tbl"><thead><tr><th>장비명</th><th></th></tr></thead><tbody>'+
+    (equipRows||'<tr><td colspan="2" class="empty">등록된 장비가 없습니다.</td></tr>')+'</tbody></table></div>'+
+  '</div>';
+}
+VIEW_BINDERS['#/settings'] = function(){
+  document.getElementById('logout-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    if(!validateRequired(e.target)) return;
+    var s = store.get('settings', {});
+    s.autoLogoutMinutes = Number(document.getElementById('s-logout').value);
+    s.companyName = document.getElementById('s-company').value.trim();
+    store.set('settings', s);
+    audit.append('SETTINGS_UPDATE', 'settings', '자동 로그아웃 '+s.autoLogoutMinutes+'분');
+    toast('설정이 저장되었습니다.');
+    idleTimer.reset();
+  });
+  document.getElementById('policy-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    if(!validateRequired(e.target)) return;
+    var s = store.get('settings', {});
+    var before = JSON.stringify(s.passwordPolicy);
+    s.passwordPolicy = {
+      minLength: Number(document.getElementById('p-minlen').value),
+      requireUppercase: document.getElementById('p-upper').checked,
+      requireNumber: document.getElementById('p-number').checked,
+      requireSpecialChar: document.getElementById('p-special').checked,
+      changeIntervalDays: Number(document.getElementById('p-interval').value)
+    };
+    store.set('settings', s);
+    audit.append('POLICY_UPDATE', 'passwordPolicy', before+' → '+JSON.stringify(s.passwordPolicy));
+    toast('패스워드 정책이 저장되었습니다. 신규 계정 생성과 비밀번호 변경에 즉시 적용됩니다.');
+  });
+  document.getElementById('equip-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    var name = document.getElementById('eq-name').value.trim();
+    if(!name){ toast('장비명을 입력하세요.', 'error'); return; }
+    var s = store.get('settings', {});
+    if(s.equipmentList.indexOf(name)>=0){ toast('이미 등록된 장비입니다.', 'error'); return; }
+    s.equipmentList.push(name);
+    store.set('settings', s);
+    audit.append('EQUIPMENT_ADD', name, '장비 추가');
+    toast('장비가 추가되었습니다: '+name);
+    renderRoute();
+  });
+  document.querySelectorAll('[data-remove-equip]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var idx = Number(btn.getAttribute('data-remove-equip'));
+      var s = store.get('settings', {});
+      var name = s.equipmentList[idx];
+      openModal({
+        title: '장비 삭제',
+        desc: '<b>'+escapeHtml(name)+'</b> 장비를 목록에서 삭제합니다.<br>기존 사용 기록은 영향을 받지 않습니다 (기록 불변).',
+        okText: '삭제', danger: true,
+        onOk: function(){
+          s.equipmentList.splice(idx, 1);
+          store.set('settings', s);
+          audit.append('EQUIPMENT_REMOVE', name, '장비 삭제 (기존 기록 유지)');
+          toast('장비가 삭제되었습니다: '+name);
+          renderRoute();
+        }
+      });
+    });
+  });
+};
+
+/* ============================================================
+   18. 초기화
+   ============================================================ */
+window.addEventListener('hashchange', renderRoute);
+document.addEventListener('DOMContentLoaded', function(){
+  seedIfEmpty();
+  idleTimer.bind();
+  if(!location.hash) location.hash = auth.current() ? '#/dashboard' : '#/login';
+  renderRoute();
+});
+
+})();
+</script>
+</body>
+</html>

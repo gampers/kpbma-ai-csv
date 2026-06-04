@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COA - 시험성적서 자동판정 시스템</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', 'Malgun Gothic', sans-serif; background: #f0f2f5; color: #333; }
+
+        /* 로그인 화면 */
+        #login-screen {
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+        }
+        .login-box {
+            background: #fff; padding: 40px; border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2); width: 380px; text-align: center;
+        }
+        .login-box h1 { font-size: 22px; color: #1a73e8; margin-bottom: 8px; }
+        .login-box h2 { font-size: 14px; color: #666; margin-bottom: 30px; font-weight: normal; }
+        .login-box input {
+            width: 100%; padding: 12px 16px; margin-bottom: 16px;
+            border: 2px solid #ddd; border-radius: 8px; font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        .login-box input:focus { border-color: #1a73e8; outline: none; }
+        .login-box button {
+            width: 100%; padding: 12px; background: #1a73e8; color: #fff;
+            border: none; border-radius: 8px; font-size: 16px; cursor: pointer;
+            transition: background 0.2s;
+        }
+        .login-box button:hover { background: #1557b0; }
+        .login-error { color: #d32f2f; font-size: 13px; margin-bottom: 12px; min-height: 20px; }
+
+        /* 메인 앱 */
+        #app { display: none; }
+        header {
+            background: #1a73e8; color: #fff; padding: 12px 24px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        header h1 { font-size: 18px; }
+        .header-right { display: flex; align-items: center; gap: 16px; font-size: 13px; }
+        .header-right .user-info { opacity: 0.9; }
+        .header-right .timer-info { background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 12px; font-size: 12px; }
+        .header-right button {
+            background: rgba(255,255,255,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.3);
+            padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px;
+        }
+        .header-right button:hover { background: rgba(255,255,255,0.3); }
+
+        /* 탭 네비게이션 */
+        nav {
+            background: #fff; border-bottom: 2px solid #e0e0e0;
+            display: flex; padding: 0 24px;
+        }
+        nav button {
+            padding: 14px 20px; border: none; background: none;
+            font-size: 14px; color: #666; cursor: pointer;
+            border-bottom: 3px solid transparent; transition: all 0.2s;
+        }
+        nav button:hover { color: #1a73e8; background: #f5f8ff; }
+        nav button.active { color: #1a73e8; border-bottom-color: #1a73e8; font-weight: 600; }
+
+        /* 콘텐츠 영역 */
+        main { max-width: 1100px; margin: 24px auto; padding: 0 24px; }
+        .tab-section { display: none; }
+        .tab-section.active { display: block; }
+
+        /* 카드 스타일 */
+        .card {
+            background: #fff; border-radius: 10px; padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px;
+        }
+        .card h3 {
+            font-size: 16px; color: #1a73e8; margin-bottom: 16px;
+            padding-bottom: 10px; border-bottom: 1px solid #eee;
+        }
+
+        /* 테이블 */
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px 12px; text-align: left; border: 1px solid #e0e0e0; font-size: 13px; }
+        th { background: #f5f7fa; font-weight: 600; color: #444; }
+
+        /* 폼 요소 */
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 6px; }
+        .form-group input, .form-group textarea {
+            width: 100%; padding: 10px 12px; border: 2px solid #ddd;
+            border-radius: 6px; font-size: 14px;
+        }
+        .form-group input:focus, .form-group textarea:focus { border-color: #1a73e8; outline: none; }
+        .form-row { display: flex; gap: 16px; }
+        .form-row .form-group { flex: 1; }
+
+        /* 버튼 */
+        .btn {
+            padding: 10px 20px; border: none; border-radius: 6px;
+            font-size: 14px; cursor: pointer; transition: all 0.2s; font-weight: 500;
+        }
+        .btn-primary { background: #1a73e8; color: #fff; }
+        .btn-primary:hover { background: #1557b0; }
+        .btn-success { background: #2e7d32; color: #fff; }
+        .btn-success:hover { background: #1b5e20; }
+        .btn-warning { background: #f57c00; color: #fff; }
+        .btn-warning:hover { background: #e65100; }
+        .btn-danger { background: #d32f2f; color: #fff; }
+        .btn-danger:hover { background: #b71c1c; }
+        .btn:disabled { background: #bbb; cursor: not-allowed; }
+        .btn-group { display: flex; gap: 10px; margin-top: 16px; }
+
+        /* 판정 결과 */
+        .result-pass { color: #2e7d32; font-weight: 700; }
+        .result-fail { color: #d32f2f; font-weight: 700; }
+        .badge-pass { background: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 12px; font-weight: 600; font-size: 13px; }
+        .badge-fail { background: #ffebee; color: #d32f2f; padding: 4px 12px; border-radius: 12px; font-weight: 600; font-size: 13px; }
+
+        /* 잠금 상태 */
+        .locked input, .locked textarea { background: #f5f5f5; color: #888; }
+
+        /* 감사추적 테이블 */
+        #audit-table tr:nth-child(even) { background: #fafafa; }
+        #audit-table td { font-size: 12px; }
+
+        /* 보고서 영역 */
+        .report-preview {
+            border: 2px solid #1a73e8; border-radius: 8px; padding: 30px;
+            background: #fff; font-family: 'Malgun Gothic', serif;
+        }
+        .report-preview h2 { text-align: center; font-size: 20px; margin-bottom: 4px; }
+        .report-preview .report-subtitle { text-align: center; color: #666; margin-bottom: 20px; font-size: 14px; }
+        .report-preview .report-meta { font-size: 13px; color: #555; margin-bottom: 16px; }
+        .report-preview table { margin: 16px 0; }
+        .report-overall { font-size: 18px; text-align: center; padding: 16px; margin-top: 16px; border-radius: 8px; }
+        .report-overall.pass { background: #e8f5e9; color: #2e7d32; }
+        .report-overall.fail { background: #ffebee; color: #d32f2f; }
+
+        /* 알림 */
+        .alert { padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; font-size: 13px; }
+        .alert-info { background: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb; }
+        .alert-warning { background: #fff3e0; color: #e65100; border: 1px solid #ffe0b2; }
+        .alert-success { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+
+        /* 검증 섹션 */
+        .verify-section {
+            background: #f5f8ff; border: 1px solid #bbdefb;
+            border-radius: 6px; padding: 12px 16px; margin-top: 12px; font-size: 13px;
+        }
+        .verify-item { display: flex; justify-content: space-between; padding: 4px 0; }
+        .verify-match { color: #2e7d32; }
+        .verify-mismatch { color: #d32f2f; }
+
+        /* 토스트 알림 */
+        #toast-container {
+            position: fixed; top: 20px; right: 20px; z-index: 9999;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .toast {
+            padding: 12px 20px; border-radius: 8px; color: #fff; font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2); animation: toastIn 0.3s ease;
+            max-width: 400px;
+        }
+        .toast-success { background: #2e7d32; }
+        .toast-error { background: #d32f2f; }
+        .toast-info { background: #1a73e8; }
+        .toast-warning { background: #f57c00; }
+        @keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+
+        /* 확인 대화상자 */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 10000;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .modal-box {
+            background: #fff; padding: 28px; border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3); max-width: 400px; text-align: center;
+        }
+        .modal-box p { margin-bottom: 20px; font-size: 15px; }
+        .modal-box .btn-group { justify-content: center; }
+
+        /* 인쇄 스타일 */
+        @media print {
+            body { background: #fff; }
+            #login-screen, header, nav, .no-print { display: none !important; }
+            main { margin: 0; padding: 0; max-width: 100%; }
+            .tab-section { display: none !important; }
+            .tab-section.print-target { display: block !important; }
+            .card { box-shadow: none; border: 1px solid #ddd; }
+            .report-preview { border: none; padding: 0; }
+        }
+    </style>
+</head>
+<body>
+<div id="toast-container"></div>
+
+<!-- ========== 로그인 화면 ========== -->
+<div id="login-screen">
+    <div class="login-box">
+        <h1>COA</h1>
+        <h2>시험성적서 자동판정 시스템</h2>
+        <div id="login-error" class="login-error"></div>
+        <input type="text" id="login-id" placeholder="사용자 ID" autocomplete="off">
+        <input type="password" id="login-pw" placeholder="비밀번호">
+        <button onclick="handleLogin()">로그인</button>
+        <div style="margin-top:16px; font-size:11px; color:#999;">
+            데모 계정: admin / admin123 또는 user1 / user123
+        </div>
+    </div>
+</div>
+
+<!-- ========== 메인 앱 ========== -->
+<div id="app">
+    <header>
+        <h1>COA - 시험성적서 자동판정 시스템</h1>
+        <div class="header-right">
+            <span class="user-info" id="header-user"></span>
+            <span class="timer-info" id="header-timer">자동 로그아웃: --:--</span>
+            <button onclick="handleLogout()">로그아웃</button>
+        </div>
+    </header>
+
+    <nav id="tab-nav">
+        <button class="active" onclick="switchTab('test')">시험 입력</button>
+        <button onclick="switchTab('criteria')">판정 기준 설정</button>
+        <button onclick="switchTab('report')">보고서</button>
+        <button onclick="switchTab('audit')">감사추적</button>
+        <button onclick="switchTab('settings')">설정</button>
+    </nav>
+
+    <main>
+        <!-- 시험 입력 탭 -->
+        <section id="tab-test" class="tab-section active">
+            <div class="card">
+                <h3>시험 결과 입력 및 판정</h3>
+                <div id="no-criteria-alert" class="alert alert-warning">
+                    판정 기준이 설정되지 않았습니다. 먼저 "판정 기준 설정" 탭에서 기준을 설정해주세요.
+                </div>
+                <div id="test-form">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:12%">시험항목</th>
+                                <th style="width:15%">허용기준</th>
+                                <th style="width:18%">입력값</th>
+                                <th style="width:15%">출력값</th>
+                                <th style="width:10%">판정</th>
+                                <th style="width:30%">부적합 사유</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>외관</strong><br><span style="font-size:11px;color:#888;">(텍스트)</span></td>
+                                <td id="text-criteria-display">-</td>
+                                <td><input type="text" id="text-input" placeholder="텍스트 입력" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;"></td>
+                                <td id="text-output" style="font-weight:600;">-</td>
+                                <td id="text-judgment">-</td>
+                                <td><input type="text" id="text-reason" placeholder="부적합 사유 입력" disabled style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;"></td>
+                            </tr>
+                            <tr>
+                                <td><strong>함량</strong><br><span style="font-size:11px;color:#888;">(숫자, %)</span></td>
+                                <td id="num-criteria-display">-</td>
+                                <td><input type="number" id="num-input" step="0.01" placeholder="숫자 입력 (소수점 2자리)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;"></td>
+                                <td id="num-output" style="font-weight:600;">-</td>
+                                <td id="num-judgment">-</td>
+                                <td><input type="text" id="num-reason" placeholder="부적합 사유 입력" disabled style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div id="verify-section" class="verify-section" style="display:none;">
+                        <strong>입력값 / 출력값 일치 확인 (URS 2.2.5)</strong>
+                        <div class="verify-item">
+                            <span>외관 - 입력값: <span id="verify-text-in">-</span></span>
+                            <span>출력값: <span id="verify-text-out">-</span></span>
+                            <span id="verify-text-status"></span>
+                        </div>
+                        <div class="verify-item">
+                            <span>함량 - 입력값: <span id="verify-num-in">-</span></span>
+                            <span>출력값: <span id="verify-num-out">-</span></span>
+                            <span id="verify-num-status"></span>
+                        </div>
+                    </div>
+
+                    <div class="btn-group">
+                        <button class="btn btn-primary" id="judge-btn" onclick="judgeResults()">판정 실행</button>
+                        <button class="btn btn-warning" id="new-test-btn" onclick="resetTest()" style="display:none;">새 시험</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 판정 기준 설정 탭 -->
+        <section id="tab-criteria" class="tab-section">
+            <div class="card">
+                <h3>판정 기준 설정</h3>
+                <div class="alert alert-info">시험 항목별 허용 기준을 설정합니다. 설정 후 "저장" 버튼을 클릭하세요.</div>
+
+                <div style="margin-top:16px;">
+                    <h4 style="margin-bottom:12px; color:#333;">1. 외관 (텍스트 항목)</h4>
+                    <div class="form-group">
+                        <label>기대값 (정확히 일치해야 적합 판정)</label>
+                        <input type="text" id="criteria-text-expected" placeholder="예: 백색 분말">
+                    </div>
+                </div>
+
+                <div style="margin-top:24px;">
+                    <h4 style="margin-bottom:12px; color:#333;">2. 함량 (숫자 항목, %)</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>최소값</label>
+                            <input type="number" id="criteria-num-min" step="0.01" placeholder="예: 98.00">
+                        </div>
+                        <div class="form-group">
+                            <label>최대값</label>
+                            <input type="number" id="criteria-num-max" step="0.01" placeholder="예: 102.00">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="saveCriteria()">기준 저장</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 보고서 탭 -->
+        <section id="tab-report" class="tab-section">
+            <div class="card no-print">
+                <h3>보고서 생성 및 출력</h3>
+                <div id="report-no-data" class="alert alert-warning">
+                    판정이 완료된 시험 결과가 없습니다. 먼저 시험을 수행해주세요.
+                </div>
+                <div id="report-actions" class="btn-group" style="display:none;">
+                    <button class="btn btn-primary" onclick="generateReport()">보고서 생성</button>
+                    <button class="btn btn-success" id="btn-save-report" onclick="saveReport()" style="display:none;">HTML 다운로드 (저장)</button>
+                    <button class="btn btn-warning" id="btn-print-report" onclick="printReport()" style="display:none;">인쇄 / PDF 저장</button>
+                </div>
+            </div>
+            <div id="report-content" class="card" style="display:none;">
+                <div class="report-preview" id="report-preview"></div>
+            </div>
+        </section>
+
+        <!-- 감사추적 탭 -->
+        <section id="tab-audit" class="tab-section">
+            <div class="card">
+                <h3>감사추적 (Audit Trail)</h3>
+                <div class="alert alert-info">모든 사용자 행위가 자동으로 기록됩니다. 감사추적 이력은 수정 및 삭제할 수 없습니다.</div>
+                <div class="btn-group" style="margin-bottom:16px;">
+                    <button class="btn btn-success" onclick="exportAuditCSV()">CSV 내보내기</button>
+                    <button class="btn btn-primary" onclick="refreshAuditTable()">새로고침</button>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table id="audit-table">
+                        <thead>
+                            <tr>
+                                <th style="width:5%">No</th>
+                                <th style="width:18%">일시</th>
+                                <th style="width:10%">사용자 ID</th>
+                                <th style="width:10%">사용자명</th>
+                                <th style="width:17%">행위</th>
+                                <th style="width:40%">상세 내용</th>
+                            </tr>
+                        </thead>
+                        <tbody id="audit-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 설정 탭 -->
+        <section id="tab-settings" class="tab-section">
+            <div class="card">
+                <h3>시스템 설정</h3>
+                <div class="form-group">
+                    <label>자동 로그아웃 시간 (분)</label>
+                    <input type="number" id="settings-timeout" min="1" max="60" value="5" style="width:200px;">
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="saveSettings()">설정 저장</button>
+                </div>
+                <div id="settings-saved" class="alert alert-success" style="display:none; margin-top:16px;">설정이 저장되었습니다.</div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<script>
+// ==================== 토스트 알림 / 모달 ====================
+function showToast(message, type = 'info', duration = 3000) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'toast toast-' + type;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => { toast.remove(); }, duration);
+}
+
+function showConfirm(message) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.innerHTML = `
+            <div class="modal-box">
+                <p>${message}</p>
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="modal-yes">확인</button>
+                    <button class="btn btn-danger" id="modal-no">취소</button>
+                </div>
+            </div>`;
+        document.body.appendChild(overlay);
+        overlay.querySelector('#modal-yes').onclick = () => { overlay.remove(); resolve(true); };
+        overlay.querySelector('#modal-no').onclick = () => { overlay.remove(); resolve(false); };
+    });
+}
+
+// ==================== 상수 및 상태 ====================
+const USERS = [
+    { id: 'admin', pw: 'admin123', name: '관리자' },
+    { id: 'user1', pw: 'user123', name: '시험자1' }
+];
+
+let currentUser = null;
+let logoutTimer = null;
+let countdownInterval = null;
+let remainingSeconds = 0;
+let testLocked = false;
+let testJudged = false;
+
+// ==================== 유틸리티 ====================
+function getTimestamp() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const h = String(now.getHours()).padStart(2, '0');
+    const mi = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+    return `${y}-${m}-${d} ${h}:${mi}:${s}`;
+}
+
+function getFileTimestamp() {
+    return getTimestamp().replace(/[: ]/g, '_');
+}
+
+// ==================== 감사추적 ====================
+function addAuditLog(action, details = '') {
+    const logs = JSON.parse(localStorage.getItem('coa_audit_logs') || '[]');
+    const entry = Object.freeze({
+        id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2),
+        timestamp: getTimestamp(),
+        userId: currentUser ? currentUser.id : 'system',
+        userName: currentUser ? currentUser.name : '시스템',
+        action: action,
+        details: details
+    });
+    logs.push(entry);
+    localStorage.setItem('coa_audit_logs', JSON.stringify(logs));
+}
+
+function refreshAuditTable() {
+    const logs = JSON.parse(localStorage.getItem('coa_audit_logs') || '[]');
+    const tbody = document.getElementById('audit-tbody');
+    tbody.innerHTML = '';
+    logs.slice().reverse().forEach((log, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${logs.length - idx}</td>
+            <td>${log.timestamp}</td>
+            <td>${log.userId}</td>
+            <td>${log.userName}</td>
+            <td>${log.action}</td>
+            <td>${log.details}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function exportAuditCSV() {
+    const logs = JSON.parse(localStorage.getItem('coa_audit_logs') || '[]');
+    if (logs.length === 0) {
+        showToast('감사추적 이력이 없습니다.', 'warning');
+        return;
+    }
+    const BOM = '\uFEFF';
+    let csv = BOM + 'No,일시,사용자ID,사용자명,행위,상세내용\n';
+    logs.forEach((log, i) => {
+        csv += `${i + 1},"${log.timestamp}","${log.userId}","${log.userName}","${log.action}","${(log.details || '').replace(/"/g, '""')}"\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `AuditTrail_${getFileTimestamp()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    addAuditLog('감사추적 CSV 내보내기', `${logs.length}건 내보내기`);
+}
+
+// ==================== 로그인 / 로그아웃 ====================
+function handleLogin() {
+    const id = document.getElementById('login-id').value.trim();
+    const pw = document.getElementById('login-pw').value;
+    const user = USERS.find(u => u.id === id && u.pw === pw);
+
+    if (!user) {
+        document.getElementById('login-error').textContent = '사용자 ID 또는 비밀번호가 올바르지 않습니다.';
+        addAuditLog('로그인 실패', `ID: ${id}`);
+        return;
+    }
+
+    currentUser = user;
+    sessionStorage.setItem('coa_user', JSON.stringify(user));
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('header-user').textContent = `${user.name} (${user.id})`;
+    document.getElementById('login-error').textContent = '';
+    document.getElementById('login-id').value = '';
+    document.getElementById('login-pw').value = '';
+
+    addAuditLog('로그인', `사용자: ${user.name} (${user.id})`);
+    startAutoLogoutTimer();
+    loadCriteria();
+    updateTestDisplay();
+    refreshAuditTable();
+}
+
+function handleLogout() {
+    addAuditLog('로그아웃', `사용자: ${currentUser.name}`);
+    doLogout();
+}
+
+function doLogout() {
+    currentUser = null;
+    sessionStorage.removeItem('coa_user');
+    clearTimeout(logoutTimer);
+    clearInterval(countdownInterval);
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    testLocked = false;
+    testJudged = false;
+}
+
+// 엔터키 로그인
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('login-pw').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') handleLogin();
+    });
+    document.getElementById('login-id').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') document.getElementById('login-pw').focus();
+    });
+
+    // 세션 복원
+    const savedUser = sessionStorage.getItem('coa_user');
+    if (savedUser) {
+        const user = JSON.parse(savedUser);
+        const valid = USERS.find(u => u.id === user.id);
+        if (valid) {
+            currentUser = valid;
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            document.getElementById('header-user').textContent = `${valid.name} (${valid.id})`;
+            startAutoLogoutTimer();
+            loadCriteria();
+            updateTestDisplay();
+            refreshAuditTable();
+        }
+    }
+});
+
+// ==================== 자동 로그아웃 ====================
+function getTimeoutMinutes() {
+    return parseInt(localStorage.getItem('coa_timeout_minutes')) || 5;
+}
+
+function startAutoLogoutTimer() {
+    clearTimeout(logoutTimer);
+    clearInterval(countdownInterval);
+    const minutes = getTimeoutMinutes();
+    remainingSeconds = minutes * 60;
+
+    document.getElementById('settings-timeout').value = minutes;
+    updateTimerDisplay();
+
+    countdownInterval = setInterval(() => {
+        remainingSeconds--;
+        updateTimerDisplay();
+        if (remainingSeconds <= 0) {
+            clearInterval(countdownInterval);
+        }
+    }, 1000);
+
+    logoutTimer = setTimeout(() => {
+        addAuditLog('자동 로그아웃', '시간 초과');
+        doLogout();
+        showToast('자동 로그아웃 되었습니다. (시간 초과)', 'warning', 5000);
+    }, minutes * 60 * 1000);
+}
+
+function resetAutoLogoutTimer() {
+    if (currentUser) {
+        startAutoLogoutTimer();
+    }
+}
+
+function updateTimerDisplay() {
+    const m = Math.floor(remainingSeconds / 60);
+    const s = remainingSeconds % 60;
+    document.getElementById('header-timer').textContent =
+        `자동 로그아웃: ${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+// 사용자 활동 감지
+['mousemove', 'keydown', 'click'].forEach(evt => {
+    document.addEventListener(evt, () => {
+        if (currentUser) {
+            clearTimeout(logoutTimer);
+            clearInterval(countdownInterval);
+            startAutoLogoutTimer();
+        }
+    });
+});
+
+// ==================== 탭 전환 ====================
+function switchTab(tabName) {
+    document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('#tab-nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + tabName).classList.add('active');
+    const buttons = document.querySelectorAll('#tab-nav button');
+    const tabMap = ['test', 'criteria', 'report', 'audit', 'settings'];
+    const idx = tabMap.indexOf(tabName);
+    if (idx >= 0) buttons[idx].classList.add('active');
+
+    if (tabName === 'audit') refreshAuditTable();
+    if (tabName === 'report') updateReportTab();
+}
+
+// ==================== 판정 기준 설정 ====================
+function loadCriteria() {
+    const saved = localStorage.getItem('coa_criteria');
+    if (saved) {
+        const c = JSON.parse(saved);
+        document.getElementById('criteria-text-expected').value = c.textExpected || '';
+        document.getElementById('criteria-num-min').value = c.numMin ?? '';
+        document.getElementById('criteria-num-max').value = c.numMax ?? '';
+    }
+    updateTestDisplay();
+}
+
+function getCriteria() {
+    return JSON.parse(localStorage.getItem('coa_criteria') || 'null');
+}
+
+function saveCriteria() {
+    const textExpected = document.getElementById('criteria-text-expected').value.trim();
+    const numMin = document.getElementById('criteria-num-min').value;
+    const numMax = document.getElementById('criteria-num-max').value;
+
+    if (!textExpected) { showToast('외관 기대값을 입력해주세요.', 'error'); return; }
+    if (numMin === '' || numMax === '') { showToast('함량 최소값과 최대값을 모두 입력해주세요.', 'error'); return; }
+    if (parseFloat(numMin) >= parseFloat(numMax)) { showToast('최소값은 최대값보다 작아야 합니다.', 'error'); return; }
+
+    const oldCriteria = getCriteria();
+    const newCriteria = {
+        textExpected: textExpected,
+        numMin: parseFloat(numMin),
+        numMax: parseFloat(numMax)
+    };
+    localStorage.setItem('coa_criteria', JSON.stringify(newCriteria));
+
+    let changeDetail = '';
+    if (oldCriteria) {
+        const changes = [];
+        if (oldCriteria.textExpected !== newCriteria.textExpected) changes.push(`외관: "${oldCriteria.textExpected}" → "${newCriteria.textExpected}"`);
+        if (oldCriteria.numMin !== newCriteria.numMin) changes.push(`함량 최소: ${oldCriteria.numMin} → ${newCriteria.numMin}`);
+        if (oldCriteria.numMax !== newCriteria.numMax) changes.push(`함량 최대: ${oldCriteria.numMax} → ${newCriteria.numMax}`);
+        changeDetail = changes.join(', ') || '변경 없음';
+    } else {
+        changeDetail = `외관: "${textExpected}", 함량: ${numMin}~${numMax}`;
+    }
+    addAuditLog('판정 기준 설정', changeDetail);
+    updateTestDisplay();
+    showToast('판정 기준이 저장되었습니다.', 'success');
+}
+
+function updateTestDisplay() {
+    const criteria = getCriteria();
+    if (criteria) {
+        document.getElementById('text-criteria-display').textContent = criteria.textExpected;
+        document.getElementById('num-criteria-display').textContent = `${criteria.numMin} ~ ${criteria.numMax}`;
+        document.getElementById('no-criteria-alert').style.display = 'none';
+        document.getElementById('judge-btn').disabled = false;
+    } else {
+        document.getElementById('text-criteria-display').textContent = '-';
+        document.getElementById('num-criteria-display').textContent = '-';
+        document.getElementById('no-criteria-alert').style.display = 'block';
+        document.getElementById('judge-btn').disabled = true;
+    }
+}
+
+// ==================== 시험 판정 ====================
+function judgeResults() {
+    const criteria = getCriteria();
+    if (!criteria) { showToast('판정 기준을 먼저 설정해주세요.', 'error'); return; }
+
+    const textInput = document.getElementById('text-input').value.trim();
+    const numInputRaw = document.getElementById('num-input').value;
+
+    if (!textInput) { showToast('외관 시험값을 입력해주세요.', 'error'); return; }
+    if (numInputRaw === '') { showToast('함량 시험값을 입력해주세요.', 'error'); return; }
+
+    const numInput = parseFloat(numInputRaw);
+
+    // 소수점 2자리 검증 (URS 2.1.2)
+    const decimalParts = numInputRaw.split('.');
+    if (decimalParts.length > 1 && decimalParts[1].length > 2) {
+        showToast('숫자 입력값은 소수점 둘째 자리까지만 입력 가능합니다.', 'error');
+        return;
+    }
+
+    // 출력값 계산 (URS 2.1.3 - 소수점 첫째자리까지, 둘째자리 반올림)
+    const numDisplay = Math.round(numInput * 10) / 10;
+
+    // 텍스트 판정
+    const textPass = (textInput === criteria.textExpected);
+    // 숫자 판정
+    const numPass = (numDisplay >= criteria.numMin && numDisplay <= criteria.numMax);
+
+    // 출력값 표시
+    document.getElementById('text-output').textContent = textInput;
+    document.getElementById('num-output').textContent = numDisplay.toFixed(1);
+
+    // 판정 결과 표시
+    document.getElementById('text-judgment').innerHTML = textPass
+        ? '<span class="badge-pass">적합</span>'
+        : '<span class="badge-fail">부적합</span>';
+    document.getElementById('num-judgment').innerHTML = numPass
+        ? '<span class="badge-pass">적합</span>'
+        : '<span class="badge-fail">부적합</span>';
+
+    // 부적합 시 사유 입력 활성화 (URS 2.2.3)
+    if (!textPass) document.getElementById('text-reason').disabled = false;
+    if (!numPass) document.getElementById('num-reason').disabled = false;
+
+    // 입력값/출력값 일치 확인 (URS 2.2.5)
+    document.getElementById('verify-section').style.display = 'block';
+    document.getElementById('verify-text-in').textContent = textInput;
+    document.getElementById('verify-text-out').textContent = textInput;
+    document.getElementById('verify-text-status').innerHTML = '<span class="verify-match">일치</span>';
+
+    document.getElementById('verify-num-in').textContent = numInput;
+    document.getElementById('verify-num-out').textContent = numDisplay.toFixed(1);
+    if (numInput === numDisplay) {
+        document.getElementById('verify-num-status').innerHTML = '<span class="verify-match">일치</span>';
+    } else {
+        document.getElementById('verify-num-status').innerHTML = '<span class="verify-mismatch">반올림 적용 (' + numInput + ' → ' + numDisplay.toFixed(1) + ')</span>';
+    }
+
+    // 잠금 처리 (URS 2.2.4)
+    lockTest();
+
+    // 시험 결과 저장
+    const result = {
+        textInput, textPass, textReason: '',
+        numInput, numDisplay, numPass, numReason: '',
+        overallPass: textPass && numPass,
+        timestamp: getTimestamp(),
+        user: currentUser
+    };
+    sessionStorage.setItem('coa_test_result', JSON.stringify(result));
+    testJudged = true;
+
+    // 감사추적
+    addAuditLog('판정 수행', `외관: ${textInput} → ${textPass ? '적합' : '부적합'}, 함량: ${numInput} → ${numDisplay.toFixed(1)} → ${numPass ? '적합' : '부적합'}`);
+}
+
+function lockTest() {
+    testLocked = true;
+    document.getElementById('text-input').disabled = true;
+    document.getElementById('num-input').disabled = true;
+    document.getElementById('judge-btn').disabled = true;
+    document.getElementById('judge-btn').style.display = 'none';
+    document.getElementById('new-test-btn').style.display = 'inline-block';
+    document.getElementById('test-form').classList.add('locked');
+}
+
+async function resetTest() {
+    const ok = await showConfirm('새 시험을 시작하시겠습니까? 현재 판정 결과는 초기화됩니다.');
+    if (!ok) return;
+
+    // 부적합 사유 저장 (잠금 해제 전에)
+    const result = JSON.parse(sessionStorage.getItem('coa_test_result') || 'null');
+    if (result) {
+        const textReason = document.getElementById('text-reason').value.trim();
+        const numReason = document.getElementById('num-reason').value.trim();
+        if (textReason || numReason) {
+            result.textReason = textReason;
+            result.numReason = numReason;
+            addAuditLog('부적합 사유 입력', `외관: ${textReason || '-'}, 함량: ${numReason || '-'}`);
+        }
+    }
+
+    testLocked = false;
+    testJudged = false;
+    document.getElementById('text-input').value = '';
+    document.getElementById('text-input').disabled = false;
+    document.getElementById('num-input').value = '';
+    document.getElementById('num-input').disabled = false;
+    document.getElementById('text-output').textContent = '-';
+    document.getElementById('num-output').textContent = '-';
+    document.getElementById('text-judgment').textContent = '-';
+    document.getElementById('num-judgment').textContent = '-';
+    document.getElementById('text-reason').value = '';
+    document.getElementById('text-reason').disabled = true;
+    document.getElementById('num-reason').value = '';
+    document.getElementById('num-reason').disabled = true;
+    document.getElementById('verify-section').style.display = 'none';
+    document.getElementById('judge-btn').disabled = false;
+    document.getElementById('judge-btn').style.display = 'inline-block';
+    document.getElementById('new-test-btn').style.display = 'none';
+    document.getElementById('test-form').classList.remove('locked');
+    sessionStorage.removeItem('coa_test_result');
+
+    addAuditLog('새 시험 시작', '시험 결과 초기화');
+}
+
+// ==================== 보고서 ====================
+function updateReportTab() {
+    const result = JSON.parse(sessionStorage.getItem('coa_test_result') || 'null');
+    if (result && testJudged) {
+        document.getElementById('report-no-data').style.display = 'none';
+        document.getElementById('report-actions').style.display = 'flex';
+    } else {
+        document.getElementById('report-no-data').style.display = 'block';
+        document.getElementById('report-actions').style.display = 'none';
+        document.getElementById('report-content').style.display = 'none';
+    }
+}
+
+function generateReport() {
+    const result = JSON.parse(sessionStorage.getItem('coa_test_result') || 'null');
+    if (!result) return;
+
+    // 부적합 사유 반영
+    result.textReason = document.getElementById('text-reason').value.trim();
+    result.numReason = document.getElementById('num-reason').value.trim();
+
+    const criteria = getCriteria();
+    const reportTime = getTimestamp();
+    const overallPass = result.textPass && result.numPass;
+    const overallText = overallPass ? '적합' : '부적합';
+    const overallClass = overallPass ? 'pass' : 'fail';
+
+    const html = `
+        <h2>시험성적서 (Certificate of Analysis)</h2>
+        <p class="report-subtitle">COA - 시험성적서 자동판정 시스템</p>
+        <hr style="margin: 16px 0;">
+        <div class="report-meta">
+            <p><strong>보고서 출력 일시:</strong> ${reportTime}</p>
+            <p><strong>시험 수행 일시:</strong> ${result.timestamp}</p>
+            <p><strong>시험자:</strong> ${result.user.name} (${result.user.id})</p>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>시험항목</th>
+                    <th>허용기준</th>
+                    <th>입력값</th>
+                    <th>출력값</th>
+                    <th>판정</th>
+                    <th>부적합 사유</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>외관 (텍스트)</td>
+                    <td>${criteria.textExpected}</td>
+                    <td>${result.textInput}</td>
+                    <td>${result.textInput}</td>
+                    <td class="${result.textPass ? 'result-pass' : 'result-fail'}">${result.textPass ? '적합' : '부적합'}</td>
+                    <td>${result.textReason || '-'}</td>
+                </tr>
+                <tr>
+                    <td>함량 (숫자, %)</td>
+                    <td>${criteria.numMin} ~ ${criteria.numMax}</td>
+                    <td>${result.numInput}</td>
+                    <td>${result.numDisplay.toFixed(1)}</td>
+                    <td class="${result.numPass ? 'result-pass' : 'result-fail'}">${result.numPass ? '적합' : '부적합'}</td>
+                    <td>${result.numReason || '-'}</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="report-overall ${overallClass}">
+            <strong>종합 판정: ${overallText}</strong>
+        </div>
+    `;
+
+    document.getElementById('report-preview').innerHTML = html;
+    document.getElementById('report-content').style.display = 'block';
+    document.getElementById('btn-save-report').style.display = 'inline-block';
+    document.getElementById('btn-print-report').style.display = 'inline-block';
+
+    addAuditLog('보고서 생성', `종합 판정: ${overallText}, 출력 일시: ${reportTime}`);
+}
+
+function saveReport() {
+    const reportHTML = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>COA 시험성적서</title>
+    <style>
+        body { font-family: 'Malgun Gothic', sans-serif; padding: 40px; color: #333; }
+        h2 { text-align: center; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #333; padding: 10px; text-align: left; }
+        th { background: #f0f0f0; }
+        .pass { color: #2e7d32; font-weight: bold; }
+        .fail { color: #d32f2f; font-weight: bold; }
+        .overall { text-align: center; padding: 16px; margin-top: 20px; font-size: 18px; font-weight: bold; }
+        .overall.pass-bg { background: #e8f5e9; color: #2e7d32; }
+        .overall.fail-bg { background: #ffebee; color: #d32f2f; }
+        .meta { margin-bottom: 16px; }
+    </style>
+</head>
+<body>${document.getElementById('report-preview').innerHTML}</body>
+</html>`;
+
+    const blob = new Blob([reportHTML], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `COA_Report_${getFileTimestamp()}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    addAuditLog('보고서 저장', `파일명: COA_Report_${getFileTimestamp()}.html`);
+}
+
+function printReport() {
+    document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('print-target'));
+    document.getElementById('tab-report').classList.add('print-target');
+    window.print();
+    addAuditLog('보고서 인쇄/PDF', '인쇄 대화상자 실행');
+}
+
+// ==================== 설정 ====================
+function saveSettings() {
+    const timeout = parseInt(document.getElementById('settings-timeout').value);
+    if (isNaN(timeout) || timeout < 1 || timeout > 60) {
+        showToast('1~60분 사이의 값을 입력해주세요.', 'error');
+        return;
+    }
+
+    const oldTimeout = getTimeoutMinutes();
+    localStorage.setItem('coa_timeout_minutes', timeout.toString());
+
+    addAuditLog('설정 변경', `자동 로그아웃 시간: ${oldTimeout}분 → ${timeout}분`);
+
+    startAutoLogoutTimer();
+
+    const saved = document.getElementById('settings-saved');
+    saved.style.display = 'block';
+    setTimeout(() => { saved.style.display = 'none'; }, 3000);
+}
+</script>
+
+</body>
+</html>
