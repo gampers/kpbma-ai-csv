@@ -186,7 +186,7 @@ function renderLoginView() {
           <img src="${logoCi}" alt="KPBMA CI" style="max-width: 512px; height: auto; display: block; margin: 0 auto;">
         </div>
         <h1>교육팀 CSV 실습 자료 통합 포털</h1>
-        <div class="sub">AI-Based 데이터 완전성(DI) 및 CSV 교육 실습용 포털 v2</div>
+        <div class="sub">AI-Based 데이터 완전성(DI) 및 CSV 교육 실습용 포털</div>
         
         <form id="login-form">
           <div class="form-row" style="grid-template-columns: 100px 1fr; margin-bottom: 12px;">
