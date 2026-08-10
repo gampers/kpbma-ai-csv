@@ -88,8 +88,19 @@ async function processSyncQueue() {
     // Process next item
     setTimeout(processSyncQueue, 100);
   } catch (err) {
-    console.warn("Retrying sync queue later...");
+    const currentQueue = JSON.parse(localStorage.getItem(STORAGE_KEYS.PENDING_SYNC) || "[]");
+    const currentItem = currentQueue.find(q => q.id === item.id);
+    const attempts = (currentItem?.attempts || 0) + 1;
+    const updatedQueue = currentQueue.map(q => (
+      q.id === item.id ? { ...q, attempts } : q
+    ));
+    localStorage.setItem(STORAGE_KEYS.PENDING_SYNC, JSON.stringify(updatedQueue));
+
+    const retryDelay = Math.min(30000, 1000 * (2 ** Math.min(attempts - 1, 5)))
+      + Math.floor(Math.random() * 500);
+    console.warn(`Sync queue retry scheduled in ${retryDelay}ms.`, err);
     processSyncQueue.running = false;
+    setTimeout(processSyncQueue, retryDelay);
   }
 }
 
@@ -136,6 +147,81 @@ export const sheetAdapter = {
     } catch (err) {
       console.warn("Database sync failed, operating in offline cache mode.", err);
     }
+  },
+
+  // Pull the latest records and audit logs for one module without replacing
+  // unrelated module caches. Local pending writes take precedence until sent.
+  async refreshSystem(system) {
+    const normalizedSystem = String(system || "").toUpperCase();
+    const remoteData = await callApi("SYNC_SYSTEM", { system: normalizedSystem });
+
+    const allRecords = JSON.parse(localStorage.getItem(STORAGE_KEYS.RECORDS) || "[]");
+    const allLogs = JSON.parse(localStorage.getItem(STORAGE_KEYS.AUDIT_LOGS) || "[]");
+    const pendingQueue = JSON.parse(localStorage.getItem(STORAGE_KEYS.PENDING_SYNC) || "[]");
+
+    const localSystemRecords = allRecords.filter(r => r.system === normalizedSystem);
+    const localSystemLogs = allLogs.filter(l => l.system === normalizedSystem);
+    const otherRecords = allRecords.filter(r => r.system !== normalizedSystem);
+    const otherLogs = allLogs.filter(l => l.system !== normalizedSystem);
+
+    const remoteRecords = (remoteData.records || []).map(r => ({
+      ...r,
+      isDeleted: String(r.isDeleted).toUpperCase() === "TRUE"
+    }));
+    const remoteLogs = remoteData.audit_logs || [];
+
+    const pendingRecordIds = new Set();
+    const pendingLogIds = new Set();
+    pendingQueue.forEach(item => {
+      if (item.action === "WRITE_RECORD" && item.payload?.system === normalizedSystem) {
+        pendingRecordIds.add(item.payload.id);
+      } else if (item.action === "WRITE_AUDIT" && item.payload?.system === normalizedSystem) {
+        pendingLogIds.add(item.payload.logId);
+      } else if (item.action === "COMMIT_RECORD") {
+        if (item.payload?.record?.system === normalizedSystem) {
+          pendingRecordIds.add(item.payload.record.id);
+        }
+        if (item.payload?.audit?.system === normalizedSystem) {
+          pendingLogIds.add(item.payload.audit.logId);
+        }
+      }
+    });
+
+    // Records are soft-deleted, so merging by ID safely keeps an unsent local
+    // write while allowing the server version to replace stale cached values.
+    const recordsById = new Map(localSystemRecords.map(r => [r.id, r]));
+    remoteRecords.forEach(r => recordsById.set(r.id, r));
+    localSystemRecords.forEach(r => {
+      if (pendingRecordIds.has(r.id)) recordsById.set(r.id, r);
+    });
+
+    // Audit logs are append-only. Merge by logId and retain unsent local logs.
+    const logsById = new Map(localSystemLogs.map(l => [l.logId, l]));
+    remoteLogs.forEach(l => logsById.set(l.logId, l));
+    localSystemLogs.forEach(l => {
+      if (pendingLogIds.has(l.logId)) logsById.set(l.logId, l);
+    });
+
+    const mergedRecords = Array.from(recordsById.values());
+    const mergedLogs = Array.from(logsById.values());
+    const changed = JSON.stringify(localSystemRecords) !== JSON.stringify(mergedRecords)
+      || JSON.stringify(localSystemLogs) !== JSON.stringify(mergedLogs);
+
+    localStorage.setItem(
+      STORAGE_KEYS.RECORDS,
+      JSON.stringify([...otherRecords, ...mergedRecords])
+    );
+    localStorage.setItem(
+      STORAGE_KEYS.AUDIT_LOGS,
+      JSON.stringify([...otherLogs, ...mergedLogs])
+    );
+
+    return {
+      ...remoteData,
+      changed,
+      recordCount: mergedRecords.length,
+      auditCount: mergedLogs.length
+    };
   },
 
   // 1. Users DB Access

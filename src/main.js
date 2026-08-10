@@ -18,6 +18,21 @@ const MODULES = {
   cvm: cvmModule
 };
 
+const AUTO_SYNC_INTERVAL_MS = 10000;
+const AUTO_SYNC_ROUTES = new Set([
+  "dashboard",
+  "mine",
+  "approvals",
+  "records",
+  "print",
+  "audit",
+  "asl"
+]);
+
+let activeSyncContext = null;
+let activeSyncTimer = null;
+let activeSyncInFlight = false;
+
 // Global Helpers
 window.esc = function(s) {
   if (s == null) return "";
@@ -96,6 +111,11 @@ async function initApp() {
   
   // Listen for hashchange
   window.addEventListener("hashchange", handleRouting);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && activeSyncContext) {
+      refreshActiveModule(false);
+    }
+  });
   
   // Perform initial route
   handleRouting();
@@ -104,6 +124,7 @@ async function initApp() {
 // Main Routing Handler
 function handleRouting() {
   const hash = window.location.hash || "#/launcher";
+  stopModuleAutoSync();
   
   // Cleanup login canvas components if we navigate away
   if (window.loginCanvasObserver) {
@@ -510,6 +531,9 @@ function getMenuIcon(label) {
 function renderGlobalShell(activeModuleKey, subRoute = "") {
   const user = authHelper.getCurrentUser();
   const companyName = getSetting("common:companyName") || "교육팀";
+  const showSyncButton = activeModuleKey !== "launcher"
+    && activeModuleKey !== "admin"
+    && AUTO_SYNC_ROUTES.has(subRoute || "dashboard");
   
   // Determine active role in the header
   let activeRoleText = "통합 권한";
@@ -570,6 +594,9 @@ function renderGlobalShell(activeModuleKey, subRoute = "") {
       <div class="user-info">
         <span><b>${window.esc(user.name)}</b> (${window.esc(user.userId)})</span>
         <span class="role-badge">${window.esc(activeRoleText)} (${window.esc(activeRoleBadge)})</span>
+        ${showSyncButton
+          ? '<button class="btn btn-secondary sm" id="btn-sync-now" style="padding: 4px 12px; font-size:12px;">최신 데이터</button>'
+          : ''}
         <button class="btn btn-secondary sm" id="btn-global-logout" style="padding: 4px 12px; font-size:12px;">로그아웃</button>
       </div>
     </div>
@@ -597,6 +624,11 @@ function renderGlobalShell(activeModuleKey, subRoute = "") {
   document.getElementById("btn-global-logout").onclick = () => {
     authHelper.logout("SYSTEM", "사용자 로그오프 버튼 누름");
   };
+
+  const syncBtn = document.getElementById("btn-sync-now");
+  if (syncBtn) {
+    syncBtn.onclick = () => refreshActiveModule(true);
+  }
   
   const resetBtn = document.getElementById("btn-sidebar-reset");
   if (resetBtn) {
@@ -615,6 +647,80 @@ function renderGlobalShell(activeModuleKey, subRoute = "") {
     // Delegate to module routing
     const module = MODULES[activeModuleKey];
     module.handleRoute(subRoute, viewport);
+    configureModuleAutoSync(activeModuleKey, subRoute);
+  }
+}
+
+function stopModuleAutoSync() {
+  if (activeSyncTimer) {
+    clearInterval(activeSyncTimer);
+    activeSyncTimer = null;
+  }
+  activeSyncContext = null;
+}
+
+function configureModuleAutoSync(moduleKey, subRoute) {
+  const normalizedRoute = subRoute || "dashboard";
+  if (!AUTO_SYNC_ROUTES.has(normalizedRoute)) return;
+
+  activeSyncContext = {
+    moduleKey,
+    subRoute,
+    routeHash: window.location.hash
+  };
+
+  // Refresh immediately when a list, approval, or audit view is opened.
+  refreshActiveModule(false);
+  activeSyncTimer = setInterval(() => {
+    if (!document.hidden) refreshActiveModule(false);
+  }, AUTO_SYNC_INTERVAL_MS);
+}
+
+async function refreshActiveModule(showFeedback) {
+  if (!activeSyncContext || activeSyncInFlight) return;
+  if (document.querySelector("#modal-root .modal-bg")) return;
+
+  const context = { ...activeSyncContext };
+  const syncBtn = document.getElementById("btn-sync-now");
+  activeSyncInFlight = true;
+
+  if (syncBtn) {
+    syncBtn.disabled = true;
+    syncBtn.textContent = "동기화 중";
+  }
+
+  try {
+    const result = await sheetAdapter.refreshSystem(context.moduleKey.toUpperCase());
+
+    // Ignore a completed request if the user navigated elsewhere meanwhile.
+    if (
+      activeSyncContext
+      && activeSyncContext.routeHash === context.routeHash
+      && window.location.hash === context.routeHash
+      && result.changed
+    ) {
+      const viewport = document.getElementById("content-viewport");
+      MODULES[context.moduleKey].handleRoute(context.subRoute, viewport);
+    }
+
+    if (showFeedback) {
+      window.toast.show(
+        `최신 데이터 동기화 완료 (기록 ${result.recordCount}건, 감사추적 ${result.auditCount}건)`,
+        "ok"
+      );
+    }
+  } catch (error) {
+    console.warn("System refresh failed:", error);
+    if (showFeedback) {
+      window.toast.show("최신 데이터 조회에 실패했습니다.", "error");
+    }
+  } finally {
+    activeSyncInFlight = false;
+    const currentSyncBtn = document.getElementById("btn-sync-now");
+    if (currentSyncBtn) {
+      currentSyncBtn.disabled = false;
+      currentSyncBtn.textContent = "최신 데이터";
+    }
   }
 }
 
