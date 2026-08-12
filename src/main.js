@@ -216,7 +216,7 @@ function renderLoginView() {
           </div>
           <div class="form-row" style="grid-template-columns: 100px 1fr; margin-bottom: 20px;">
             <label class="req">비밀번호</label>
-            <input id="lg-pw" type="password" autocomplete="off" placeholder="비밀번호 입력">
+            <input id="lg-pw" type="text" style="-webkit-text-security: disc;" autocomplete="off" placeholder="비밀번호 입력">
           </div>
           <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; border-radius:8px;">로그인</button>
         </form>
@@ -1023,7 +1023,7 @@ function showUserEditModal(userId) {
       </div>
       <div class="form-row">
         <label class="req">비밀번호</label>
-        <input id="usr-pw" type="password" value="${window.esc(userObj.password)}" required>
+        <input id="usr-pw" type="text" style="-webkit-text-security: disc;" autocomplete="off" value="${window.esc(userObj.password)}" required>
       </div>
       <div class="form-row">
         <label class="req">계정 상태</label>
@@ -1220,7 +1220,7 @@ function triggerDatabaseReset() {
     <form id="reset-confirm-form">
       <div class="form-row">
         <label class="req">관리자 PW</label>
-        <input type="password" id="reset-pw" required placeholder="비밀번호 입력">
+        <input type="text" style="-webkit-text-security: disc;" autocomplete="off" id="reset-pw" required placeholder="비밀번호 입력">
         <div class="field-error" id="reset-pw-error" style="display:none;"></div>
       </div>
       <div class="form-row">

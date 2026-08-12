@@ -668,7 +668,7 @@ export const lmModule = {
           <div class="form-row">
             <label class="req">비밀번호 확인</label>
             <div>
-              <input type="password" id="sig-pw" required placeholder="암호 입력">
+              <input type="text" style="-webkit-text-security: disc;" autocomplete="off" id="sig-pw" required placeholder="암호 입력">
               <div id="sig-pw-error" class="field-error" style="display:none;">비밀번호가 올바르지 않습니다.</div>
             </div>
           </div>

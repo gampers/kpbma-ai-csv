@@ -167,7 +167,7 @@ route("/login", () => {
           </div>
           <div class="form-row" style="grid-template-columns: 100px 1fr; margin-bottom: 20px;">
             <label class="req">비밀번호</label>
-            <input id="lg-pw" type="password" autocomplete="off" placeholder="비밀번호 입력">
+            <input id="lg-pw" type="text" style="-webkit-text-security: disc;" autocomplete="off" placeholder="비밀번호 입력">
           </div>
           <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; border-radius:8px;">로그인</button>
         </form>
@@ -756,7 +756,7 @@ function showApprovalModal(id, isApprove) {
         </div>
         <div class="form-row" style="grid-template-columns: 100px 1fr; margin-bottom:16px;">
           <label class="req">비밀번호 확인</label>
-          <input type="password" id="ap-password" placeholder="비밀번호 입력">
+          <input type="text" style="-webkit-text-security: disc;" autocomplete="off" id="ap-password" placeholder="비밀번호 입력">
           <div class="field-error" id="ap-password-error" style="display:none;"></div>
         </div>
       ` : `
@@ -1019,7 +1019,7 @@ function showUserEditModal(uId) {
       </div>
       <div class="form-row">
         <label class="req">비밀번호</label>
-        <input type="password" id="us-pw" value="${esc(targetUser.password)}" required>
+        <input type="text" style="-webkit-text-security: disc;" autocomplete="off" id="us-pw" value="${esc(targetUser.password)}" required>
       </div>
       <div class="form-row">
         <label>활성 상태</label>
