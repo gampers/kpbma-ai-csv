@@ -9,8 +9,13 @@ const STORAGE_KEYS = {
   RECORDS: "gxp_suite:records",
   AUDIT_LOGS: "gxp_suite:audit_logs",
   MASTER_DATA: "gxp_suite:master_data",
-  PENDING_SYNC: "gxp_suite:pending_sync"
+  PENDING_SYNC: "gxp_suite:pending_sync",
+  SYNC_DEAD_LETTER: "gxp_suite:sync_dead_letter"
 };
+
+// A request rejected by the server this many times is moved to the dead
+// letter store so it cannot block the rest of the queue forever.
+const MAX_REJECTED_ATTEMPTS = 5;
 
 // Seed fallback data for offline initialization
 const SEED_DATA = {
@@ -50,7 +55,14 @@ async function callApi(action, payload = {}) {
       body: JSON.stringify({ action, payload })
     });
     const result = await response.json();
-    if (!result.success) throw new Error(result.error);
+    if (!result.success) {
+      const err = new Error(result.error);
+      // A 200 response means the GAS backend itself examined and rejected the
+      // payload (e.g. validation error). Proxy/network failures come back as
+      // non-200 or unparsable and stay retryable.
+      err.rejectedByServer = response.ok;
+      throw err;
+    }
     return result.data;
   } catch (err) {
     console.warn(`[API Error in ${action}]: `, err);
@@ -91,6 +103,28 @@ async function processSyncQueue() {
     const currentQueue = JSON.parse(localStorage.getItem(STORAGE_KEYS.PENDING_SYNC) || "[]");
     const currentItem = currentQueue.find(q => q.id === item.id);
     const attempts = (currentItem?.attempts || 0) + 1;
+
+    // A payload the server keeps rejecting will never succeed. Park it in the
+    // dead letter store and keep the queue moving for the items behind it.
+    if (err.rejectedByServer && attempts >= MAX_REJECTED_ATTEMPTS) {
+      const deadLetter = JSON.parse(localStorage.getItem(STORAGE_KEYS.SYNC_DEAD_LETTER) || "[]");
+      deadLetter.push({
+        action: item.action,
+        payload: item.payload,
+        error: String(err),
+        failedAt: new Date().toISOString()
+      });
+      localStorage.setItem(STORAGE_KEYS.SYNC_DEAD_LETTER, JSON.stringify(deadLetter));
+      localStorage.setItem(
+        STORAGE_KEYS.PENDING_SYNC,
+        JSON.stringify(currentQueue.filter(q => q.id !== item.id))
+      );
+      console.error(`[Sync] Server rejected ${item.action} ${attempts} times, moved to dead letter store.`, err);
+      processSyncQueue.running = false;
+      setTimeout(processSyncQueue, 100);
+      return;
+    }
+
     const updatedQueue = currentQueue.map(q => (
       q.id === item.id ? { ...q, attempts } : q
     ));

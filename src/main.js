@@ -18,7 +18,7 @@ const MODULES = {
   cvm: cvmModule
 };
 
-const AUTO_SYNC_INTERVAL_MS = 10000;
+const AUTO_SYNC_INTERVAL_MS = 5000;
 const AUTO_SYNC_ROUTES = new Set([
   "dashboard",
   "mine",
